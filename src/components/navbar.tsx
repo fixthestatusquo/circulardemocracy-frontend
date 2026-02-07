@@ -30,41 +30,29 @@ export function Navbar() {
         </Link>
       </div>
       <NavigationMenuList className="flex items-center space-x-4">
-        <NavigationMenuItem>
-          <NavigationMenuLink asChild>
-            <Link to="/" className="font-medium text-gray-700 hover:text-gray-900">
-              Home
-            </Link>
-          </NavigationMenuLink>
-        </NavigationMenuItem>
-        <NavigationMenuItem>
-          <NavigationMenuLink asChild>
-            <Link to="/about" className="font-medium text-gray-700 hover:text-gray-900">
-              About
-            </Link>
-          </NavigationMenuLink>
-        </NavigationMenuItem>
-        <NavigationMenuItem>
-          <NavigationMenuLink asChild>
-            <Link to="/campaigns" className="font-medium text-gray-700 hover:text-gray-900">
-              Campaigns
-            </Link>
-          </NavigationMenuLink>
-        </NavigationMenuItem>
-        <NavigationMenuItem>
-          <NavigationMenuLink asChild>
-            <Link to="/users" className="font-medium text-gray-700 hover:text-gray-900">
-              Users
-            </Link>
-          </NavigationMenuLink>
-        </NavigationMenuItem>
-        <NavigationMenuItem>
-          <NavigationMenuLink asChild>
-            <Link to="/contact" className="font-medium text-gray-700 hover:text-gray-900">
-              Contact
-            </Link>
-          </NavigationMenuLink>
-        </NavigationMenuItem>
+        {user && (<>
+          <NavigationMenuItem>
+            <NavigationMenuLink asChild>
+              <Link to="/campaigns" className="font-medium text-gray-700 hover:text-gray-900">
+                Campaigns
+              </Link>
+            </NavigationMenuLink>
+          </NavigationMenuItem>
+          <NavigationMenuItem>
+            <NavigationMenuLink asChild>
+              <Link to="/users" className="font-medium text-gray-700 hover:text-gray-900">
+                Users
+              </Link>
+            </NavigationMenuLink>
+          </NavigationMenuItem>
+          <NavigationMenuItem>
+            <NavigationMenuLink asChild>
+              <Link to="/contact" className="font-medium text-gray-700 hover:text-gray-900">
+                Help
+              </Link>
+            </NavigationMenuLink>
+          </NavigationMenuItem>
+        </>)}
         {!user && (
           <>
             <NavigationMenuItem>
