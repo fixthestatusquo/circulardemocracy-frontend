@@ -3,6 +3,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { AuthApiError } from '@supabase/supabase-js'; // Import AuthApiError
+import { PageLayout } from '@/components/PageLayout'; // Import PageLayout
 
 export function RegisterPage() {
   const [email, setEmail] = useState('');
@@ -41,7 +42,7 @@ export function RegisterPage() {
   };
 
   return (
-    <div className="flex items-center justify-center min-h-screen bg-gray-100">
+    <PageLayout centerContent={true}>
       <div className="p-8 bg-white rounded-lg shadow-md w-96">
         <h2 className="text-2xl font-bold mb-6 text-center">Register</h2>
         {error && <p className="text-red-500 text-center mb-4">{error}</p>}
@@ -69,6 +70,6 @@ export function RegisterPage() {
           </Button>
         </form>
       </div>
-    </div>
+    </PageLayout>
   );
 }

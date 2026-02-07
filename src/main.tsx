@@ -5,8 +5,10 @@ import App from './App.tsx'
 import { AuthProvider } from './contexts/AuthContext.tsx'
 import { getSupabaseError } from './lib/supabase.ts' // Import getSupabaseError
 import { BrowserRouter } from 'react-router-dom' // Import BrowserRouter
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query' // Import QueryClient and QueryClientProvider
 
 const supabaseInitializationError = getSupabaseError();
+const queryClient = new QueryClient(); // Create a QueryClient instance
 
 if (supabaseInitializationError) {
   createRoot(document.getElementById('root')!).render(
@@ -20,11 +22,13 @@ if (supabaseInitializationError) {
   // Only render the app if Supabase initialized successfully
   createRoot(document.getElementById('root')!).render(
     <StrictMode>
-      <BrowserRouter> {/* Wrap AuthProvider with BrowserRouter */}
-        <AuthProvider>
-          <App />
-        </AuthProvider>
-      </BrowserRouter>
+      <QueryClientProvider client={queryClient}>
+        <BrowserRouter> {/* Wrap AuthProvider with BrowserRouter */}
+          <AuthProvider>
+            <App />
+          </AuthProvider>
+        </BrowserRouter>
+      </QueryClientProvider>
     </StrictMode>,
   );
 }

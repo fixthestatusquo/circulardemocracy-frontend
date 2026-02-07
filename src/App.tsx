@@ -3,13 +3,16 @@ import { Routes, Route, Navigate, Outlet } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { LoginPage } from "./pages/LoginPage";
 import { RegisterPage } from "./pages/RegisterPage";
+import { CampaignsPage } from "./pages/CampaignsPage";
+import { UsersPage } from "./pages/UsersPage";
+import { PageLayout } from "@/components/PageLayout"; // Import PageLayout // Import UsersPage
 
 // Placeholder for the main authenticated content
 const HomePage = () => {
   return (
-    <div className="pt-20"> {/* Add padding-top equal to navbar height */}
+    <PageLayout>
       <h1 className="text-3xl font-bold text-center">Welcome to Circular Democracy!</h1>
-    </div>
+    </PageLayout>
   );
 };
 
@@ -57,6 +60,8 @@ export function App() {
         {/* Protected Routes */}
         <Route element={<ProtectedRoute />}>
           <Route path="/" element={<HomePage />} />
+          <Route path="/campaigns" element={<CampaignsPage />} />
+          <Route path="/users" element={<UsersPage />} />
           {/* Add other protected routes here */}
         </Route>
 
