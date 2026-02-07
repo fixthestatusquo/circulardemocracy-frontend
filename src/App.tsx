@@ -5,6 +5,7 @@ import { LoginPage } from "./pages/LoginPage";
 import { RegisterPage } from "./pages/RegisterPage";
 import { CampaignsPage } from "./pages/CampaignsPage";
 import { UsersPage } from "./pages/UsersPage";
+import { DashboardPage } from "./pages/DashboardPage"; // Import DashboardPage
 import { PageLayout } from "@/components/PageLayout"; // Import PageLayout // Import UsersPage
 import { Suspense } from "react"; // Import Suspense
 
@@ -14,15 +15,6 @@ const LoadingSpinner = () => (
     <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-primary"></div>
   </div>
 );
-
-// Placeholder for the main authenticated content
-const HomePage = () => {
-  return (
-    <PageLayout>
-      <h1 className="text-3xl font-bold text-center">Welcome to Circular Democracy!</h1>
-    </PageLayout>
-  );
-};
 
 // Component for protected routes (requires authentication)
 const ProtectedRoute = () => {
@@ -69,11 +61,7 @@ export function App() {
         <Route element={<ProtectedRoute />}>
           <Route 
             path="/" 
-            element={
-              <Suspense fallback={<PageLayout centerContent={true}><LoadingSpinner /></PageLayout>}>
-                <HomePage />
-              </Suspense>
-            } 
+            element={<DashboardPage />} 
           />
           <Route 
             path="/campaigns" 

@@ -35,40 +35,40 @@ export function CampaignsPage() {
   });
 
   return (
-        <PageLayout>
-          <Card className="p-4">
-            <CardHeader>
-                      <CardTitle className="text-primary">Campaigns</CardTitle>      </CardHeader>
-            <CardContent>
-              <Suspense fallback={<LoadingSpinner />}>
-                {campaigns && campaigns.length > 0 ? (
-                  <div className="overflow-x-auto">
-                    <table className="min-w-full bg-white border border-gray-200">
-                      <thead>
-                        <tr>
-                          <th className="py-2 px-4 border-b text-left">ID</th>
-                          <th className="py-2 px-4 border-b text-left">Name</th>
-                          <th className="py-2 px-4 border-b text-left">Created At</th>
-                          <th className="py-2 px-4 border-b text-left">Updated At</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {campaigns.map((campaign) => (
-                          <tr key={campaign.id}>
-                            <td className="py-2 px-4 border-b">{campaign.id}</td>
-                            <td className="py-2 px-4 border-b">{campaign.name}</td>
-                            <td className="py-2 px-4 border-b">{formatDate(campaign.created_at)}</td>
-                            <td className="py-2 px-4 border-b">{formatDate(campaign.updated_at)}</td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                ) : (
-                  <p>No campaigns found.</p>
-                )}
-              </Suspense>
-            </CardContent>
-          </Card>
-        </PageLayout>  );
+    <PageLayout>
+      <Card className="p-4">
+        <CardHeader>
+          <CardTitle className="text-primary">Campaigns</CardTitle>      </CardHeader>
+        <CardContent>
+          <Suspense fallback={<LoadingSpinner />}>
+            {campaigns && campaigns.length > 0 ? (
+              <div className="overflow-x-auto">
+                <table className="min-w-full bg-white border border-gray-200">
+                  <thead>
+                    <tr>
+                      <th className="py-2 px-4 border-b text-left">ID</th>
+                      <th className="py-2 px-4 border-b text-left">Name</th>
+                      <th className="py-2 px-4 border-b text-left">Created At</th>
+                      <th className="py-2 px-4 border-b text-left">Updated At</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {campaigns.map((campaign) => (
+                      <tr key={campaign.id}>
+                        <td className="py-2 px-4 border-b">{campaign.id}</td>
+                        <td className="py-2 px-4 border-b">{campaign.name}</td>
+                        <td className="py-2 px-4 border-b">{formatDate(campaign.created_at)}</td>
+                        <td className="py-2 px-4 border-b">{formatDate(campaign.updated_at)}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            ) : (
+              <p>No campaigns found.</p>
+            )}
+          </Suspense>
+        </CardContent>
+      </Card>
+    </PageLayout>);
 }

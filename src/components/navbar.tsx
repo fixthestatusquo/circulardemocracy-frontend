@@ -8,9 +8,11 @@ import logo from "@/assets/logo.png";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom"; // Import Link
+import { useUser } from "@/hooks/useUser"; // Import useUser hook
 
 export function Navbar() {
-  const { user, signOut } = useAuth();
+  const { user: authUser, signOut } = useAuth();
+  const { data: currentUser } = useUser(); // Fetch current user from Supabase via hook
 
   const handleLogout = async () => {
     try {
@@ -21,6 +23,8 @@ export function Navbar() {
     }
   };
 
+  const displayUserName = currentUser?.email ? currentUser.email.split('@')[0] : 'Guest';
+
   return (
     <NavigationMenu className="fixed top-0 left-0 w-full max-w-none flex items-center justify-between p-4 border-b border-gray-200 z-50 bg-white">
       <div className="flex items-center">
@@ -30,7 +34,7 @@ export function Navbar() {
         </Link>
       </div>
       <NavigationMenuList className="flex items-center space-x-4">
-        {user && (<>
+        {authUser && (<>
           <NavigationMenuItem>
             <NavigationMenuLink asChild>
               <Link to="/campaigns" className="font-medium text-gray-700 hover:text-gray-900">
@@ -52,8 +56,11 @@ export function Navbar() {
               </Link>
             </NavigationMenuLink>
           </NavigationMenuItem>
+          <NavigationMenuItem className="font-medium text-gray-700">
+            Hello, {displayUserName}
+          </NavigationMenuItem>
         </>)}
-        {!user && (
+        {!authUser && (
           <>
             <NavigationMenuItem>
               <NavigationMenuLink asChild>
@@ -71,7 +78,7 @@ export function Navbar() {
             </NavigationMenuItem>
           </>
         )}
-        {user && (
+        {authUser && (
           <NavigationMenuItem>
             <Button variant="ghost" onClick={handleLogout}>
               Logout
