@@ -1,4 +1,4 @@
-import { useQuery } from '@tanstack/react-query';
+import { useSuspenseQuery } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabase';
 import { formatDate } from '@/lib/utils'; // Import the new utility
 import { PageLayout } from '@/components/PageLayout'; // Import PageLayout
@@ -17,70 +17,56 @@ interface PoliticianStaff {
 async function fetchPoliticianStaff(): Promise<PoliticianStaff[]> {
   const { data, error } = await supabase!.from('politician_staff').select('*');
   if (error) {
-    throw new Error(error.message);
+    throw error; // Throw error for Suspense ErrorBoundary
   }
   return data;
 }
 
 export function UsersPage() {
-  const { data: staff, isLoading, error } = useQuery<PoliticianStaff[], Error>({
+  const { data: staff } = useSuspenseQuery<PoliticianStaff[], Error>({
     queryKey: ['politician_staff'],
     queryFn: fetchPoliticianStaff,
   });
 
-  if (isLoading) {
-    return (
-      <PageLayout>
-        <div className="text-center">Loading staff...</div>
-      </PageLayout>
-    );
-  }
-
-  if (error) {
-    return (
-      <PageLayout>
-        <div className="text-center text-red-500">Error: {error.message}</div>
-      </PageLayout>
-    );
-  }
-
   return (
     <PageLayout>
-      <CardHeader>
-        <CardTitle>Team</CardTitle>
-      </CardHeader>
-      <CardContent>
-        {staff && staff.length > 0 ? (
-          <div className="overflow-x-auto">
-            <table className="min-w-full bg-white border border-gray-200">
-              <thead>
-                <tr>
-                  <th className="py-2 px-4 border-b text-left">ID</th>
-                  <th className="py-2 px-4 border-b text-left">First Name</th>
-                  <th className="py-2 px-4 border-b text-left">Last Name</th>
-                  <th className="py-2 px-4 border-b text-left">Role</th>
-                  <th className="py-2 px-4 border-b text-left">Created At</th>
-                  <th className="py-2 px-4 border-b text-left">Updated At</th>
-                </tr>
-              </thead>
-              <tbody>
-                {staff.map((member) => (
-                  <tr key={member.id}>
-                    <td className="py-2 px-4 border-b">{member.id}</td>
-                    <td className="py-2 px-4 border-b">{member.first_name}</td>
-                    <td className="py-2 px-4 border-b">{member.last_name}</td>
-                    <td className="py-2 px-4 border-b">{member.role}</td>
-                    <td className="py-2 px-4 border-b">{formatDate(member.created_at)}</td>
-                    <td className="py-2 px-4 border-b">{formatDate(member.updated_at)}</td>
+      <Card className="p-4">
+        <CardHeader>
+          <CardTitle className="text-primary">Team</CardTitle>
+        </CardHeader>
+        <CardContent>
+          {staff && staff.length > 0 ? (
+            <div className="overflow-x-auto">
+              <table className="min-w-full bg-white border border-gray-200">
+                <thead>
+                  <tr>
+                    <th className="py-2 px-4 border-b text-left">ID</th>
+                    <th className="py-2 px-4 border-b text-left">First Name</th>
+                    <th className="py-2 px-4 border-b text-left">Last Name</th>
+                    <th className="py-2 px-4 border-b text-left">Role</th>
+                    <th className="py-2 px-4 border-b text-left">Created At</th>
+                    <th className="py-2 px-4 border-b text-left">Updated At</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        ) : (
-          <p>No politician staff found.</p>
-        )}
-      </CardContent>
+                </thead>
+                <tbody>
+                  {staff.map((member) => (
+                    <tr key={member.id}>
+                      <td className="py-2 px-4 border-b">{member.id}</td>
+                      <td className="py-2 px-4 border-b">{member.first_name}</td>
+                      <td className="py-2 px-4 border-b">{member.last_name}</td>
+                      <td className="py-2 px-4 border-b">{member.role}</td>
+                      <td className="py-2 px-4 border-b">{formatDate(member.created_at)}</td>
+                      <td className="py-2 px-4 border-b">{formatDate(member.updated_at)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          ) : (
+            <p>No politician staff found.</p>
+          )}
+        </CardContent>
+      </Card>
     </PageLayout>
   );
 }

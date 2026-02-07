@@ -6,6 +6,14 @@ import { RegisterPage } from "./pages/RegisterPage";
 import { CampaignsPage } from "./pages/CampaignsPage";
 import { UsersPage } from "./pages/UsersPage";
 import { PageLayout } from "@/components/PageLayout"; // Import PageLayout // Import UsersPage
+import { Suspense } from "react"; // Import Suspense
+
+// A simple spinner component for fallback
+const LoadingSpinner = () => (
+  <div className="flex items-center justify-center min-h-screen">
+    <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-primary"></div>
+  </div>
+);
 
 // Placeholder for the main authenticated content
 const HomePage = () => {
@@ -21,7 +29,7 @@ const ProtectedRoute = () => {
   const { user, loading } = useAuth();
 
   if (loading) {
-    return <p>Loading authentication...</p>; // Or a loading spinner
+    return <PageLayout centerContent={true}><LoadingSpinner /></PageLayout>; // Or a loading spinner
   }
 
   if (!user) {
@@ -36,7 +44,7 @@ const PublicRoute = () => {
   const { user, loading } = useAuth();
 
   if (loading) {
-    return <p>Loading authentication...</p>; // Or a loading spinner
+    return <PageLayout centerContent={true}><LoadingSpinner /></PageLayout>; // Or a loading spinner
   }
 
   if (user) {
@@ -50,7 +58,7 @@ export function App() {
   const { loading: authLoading } = useAuth();
   
   if (authLoading) {
-    return <div className="flex items-center justify-center min-h-screen">Loading application...</div>;
+    return <PageLayout centerContent={true}><LoadingSpinner /></PageLayout>;
   }
 
   return (
@@ -59,9 +67,28 @@ export function App() {
       <Routes>
         {/* Protected Routes */}
         <Route element={<ProtectedRoute />}>
-          <Route path="/" element={<HomePage />} />
-          <Route path="/campaigns" element={<CampaignsPage />} />
-          <Route path="/users" element={<UsersPage />} />
+          <Route 
+            path="/" 
+            element={
+              <Suspense fallback={<PageLayout centerContent={true}><LoadingSpinner /></PageLayout>}>
+                <HomePage />
+              </Suspense>
+            } 
+          />
+          <Route 
+            path="/campaigns" 
+            element={
+                <CampaignsPage />
+            } 
+          />
+          <Route 
+            path="/users" 
+            element={
+              <Suspense fallback={<PageLayout centerContent={true}><LoadingSpinner /></PageLayout>}>
+                <UsersPage />
+              </Suspense>
+            } 
+          />
           {/* Add other protected routes here */}
         </Route>
 

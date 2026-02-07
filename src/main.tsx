@@ -6,9 +6,10 @@ import { AuthProvider } from './contexts/AuthContext.tsx'
 import { getSupabaseError } from './lib/supabase.ts' // Import getSupabaseError
 import { BrowserRouter } from 'react-router-dom' // Import BrowserRouter
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query' // Import QueryClient and QueryClientProvider
+import { ReactQueryDevtools } from '@tanstack/react-query-devtools' // Import ReactQueryDevtools
 
 const supabaseInitializationError = getSupabaseError();
-const queryClient = new QueryClient(); // Create a QueryClient instance
+const queryClient = new QueryClient(); // Create a QueryClient instance // Create a QueryClient instance
 
 if (supabaseInitializationError) {
   createRoot(document.getElementById('root')!).render(
@@ -28,6 +29,7 @@ if (supabaseInitializationError) {
             <App />
           </AuthProvider>
         </BrowserRouter>
+        <ReactQueryDevtools initialIsOpen={false} />
       </QueryClientProvider>
     </StrictMode>,
   );
