@@ -4,6 +4,7 @@ import './index.css'
 import App from './App.tsx'
 import { AuthProvider } from './contexts/AuthContext.tsx'
 import { getSupabaseError } from './lib/supabase.ts' // Import getSupabaseError
+import { BrowserRouter } from 'react-router-dom' // Import BrowserRouter
 
 const supabaseInitializationError = getSupabaseError();
 
@@ -19,9 +20,11 @@ if (supabaseInitializationError) {
   // Only render the app if Supabase initialized successfully
   createRoot(document.getElementById('root')!).render(
     <StrictMode>
-      <AuthProvider>
-        <App />
-      </AuthProvider>
+      <BrowserRouter> {/* Wrap AuthProvider with BrowserRouter */}
+        <AuthProvider>
+          <App />
+        </AuthProvider>
+      </BrowserRouter>
     </StrictMode>,
   );
 }

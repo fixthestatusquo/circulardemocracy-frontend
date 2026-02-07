@@ -6,7 +6,8 @@ import {
 } from "@/components/ui/navigation-menu";
 import logo from "@/assets/logo.png";
 import { useAuth } from "@/contexts/AuthContext";
-import { Button } from "@/components/ui/button"; // Re-import Button for logout
+import { Button } from "@/components/ui/button";
+import { Link } from "react-router-dom"; // Import Link
 
 export function Navbar() {
   const { user, signOut } = useAuth();
@@ -14,7 +15,7 @@ export function Navbar() {
   const handleLogout = async () => {
     try {
       await signOut();
-      // Optionally redirect or show a message
+      // Optionally redirect or show a message, Navigate will handle it via AuthProvider
     } catch (error) {
       console.error("Error signing out:", error);
     }
@@ -23,30 +24,49 @@ export function Navbar() {
   return (
     <NavigationMenu className="fixed top-0 left-0 w-full max-w-none flex items-center justify-between p-4 border-b border-gray-200 z-50 bg-white">
       <div className="flex items-center">
-        <img src={logo} alt="Circular Democracy Logo" className="h-8" />
+        <Link to="/">
+          <img src={logo} alt="Circular Democracy Logo" className="h-8" />
+        </Link>
       </div>
       <NavigationMenuList className="flex items-center space-x-4">
         <NavigationMenuItem>
-          <NavigationMenuLink href="#" className="font-medium text-gray-700 hover:text-gray-900">
-            Home
+          <NavigationMenuLink asChild>
+            <Link to="/" className="font-medium text-gray-700 hover:text-gray-900">
+              Home
+            </Link>
           </NavigationMenuLink>
         </NavigationMenuItem>
         <NavigationMenuItem>
-          <NavigationMenuLink href="#" className="font-medium text-gray-700 hover:text-gray-900">
-            About
+          <NavigationMenuLink asChild>
+            <Link to="/about" className="font-medium text-gray-700 hover:text-gray-900">
+              About
+            </Link>
           </NavigationMenuLink>
         </NavigationMenuItem>
         <NavigationMenuItem>
-          <NavigationMenuLink href="#" className="font-medium text-gray-700 hover:text-gray-900">
-            Contact
+          <NavigationMenuLink asChild>
+            <Link to="/contact" className="font-medium text-gray-700 hover:text-gray-900">
+              Contact
+            </Link>
           </NavigationMenuLink>
         </NavigationMenuItem>
         {!user && (
-          <NavigationMenuItem>
-            <NavigationMenuLink href="/register" className="font-medium text-gray-700 hover:text-gray-900">
-              Register
-            </NavigationMenuLink>
-          </NavigationMenuItem>
+          <>
+            <NavigationMenuItem>
+              <NavigationMenuLink asChild>
+                <Link to="/login" className="font-medium text-gray-700 hover:text-gray-900">
+                  Login
+                </Link>
+              </NavigationMenuLink>
+            </NavigationMenuItem>
+            <NavigationMenuItem>
+              <NavigationMenuLink asChild>
+                <Link to="/register" className="font-medium text-gray-700 hover:text-gray-900">
+                  Register
+                </Link>
+              </NavigationMenuLink>
+            </NavigationMenuItem>
+          </>
         )}
         {user && (
           <NavigationMenuItem>
