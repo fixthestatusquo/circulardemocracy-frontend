@@ -254,25 +254,7 @@ function ComboboxChip({
   )
 }
 
-function ComboboxChipsInput({
-  className,
-  ...props
-}: ComboboxPrimitive.Input.Props) {
-  return (
-    <ComboboxPrimitive.Input
-      data-slot="combobox-chip-input"
-      className={cn(
-        "min-w-16 flex-1 outline-none",
-        className
-      )}
-      {...props}
-    />
-  )
-}
-
-function useComboboxAnchor() {
-  return React.useRef<HTMLDivElement | null>(null)
-}
+import { useComboboxAnchor } from "./use-combobox-anchor"
 
 export {
   Combobox,
@@ -287,7 +269,6 @@ export {
   ComboboxSeparator,
   ComboboxChips,
   ComboboxChip,
-  ComboboxChipsInput,
   ComboboxTrigger,
   ComboboxValue,
   useComboboxAnchor,
