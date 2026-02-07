@@ -2,6 +2,7 @@ import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabase';
 import { formatDate } from '@/lib/utils'; // Import the new utility
 import { PageLayout } from '@/components/PageLayout'; // Import PageLayout
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'; // Import Card components
 
 interface Campaign {
   id: string;
@@ -43,18 +44,19 @@ export function CampaignsPage() {
 
   return (
     <PageLayout>
-      <div className="p-4"> {/* Adjusted padding */}
-        <h1 className="text-2xl font-bold mb-4">Campaigns</h1>
+      <CardHeader>
+        <CardTitle>Campaigns</CardTitle>
+      </CardHeader>
+      <CardContent>
         {campaigns && campaigns.length > 0 ? (
           <div className="overflow-x-auto">
             <table className="min-w-full bg-white border border-gray-200">
               <thead>
                 <tr>
-                  <th className="py-2 px-4 border-b">ID</th>
-                  <th className="py-2 px-4 border-b">Name</th>
-                  <th className="py-2 px-4 border-b">Created At</th> {/* New header */}
-                  <th className="py-2 px-4 border-b">Updated At</th> {/* New header */}
-                  {/* Add other table headers as needed */}
+                  <th className="py-2 px-4 border-b text-left">ID</th>
+                  <th className="py-2 px-4 border-b text-left">Name</th>
+                  <th className="py-2 px-4 border-b text-left">Created At</th>
+                  <th className="py-2 px-4 border-b text-left">Updated At</th>
                 </tr>
               </thead>
               <tbody>
@@ -62,9 +64,8 @@ export function CampaignsPage() {
                   <tr key={campaign.id}>
                     <td className="py-2 px-4 border-b">{campaign.id}</td>
                     <td className="py-2 px-4 border-b">{campaign.name}</td>
-                    <td className="py-2 px-4 border-b">{formatDate(campaign.created_at)}</td> {/* Display formatted date */}
-                    <td className="py-2 px-4 border-b">{formatDate(campaign.updated_at)}</td> {/* Display formatted date */}
-                    {/* Add other table cells as needed */}
+                    <td className="py-2 px-4 border-b">{formatDate(campaign.created_at)}</td>
+                    <td className="py-2 px-4 border-b">{formatDate(campaign.updated_at)}</td>
                   </tr>
                 ))}
               </tbody>
@@ -73,7 +74,7 @@ export function CampaignsPage() {
         ) : (
           <p>No campaigns found.</p>
         )}
-      </div>
+      </CardContent>
     </PageLayout>
   );
 }

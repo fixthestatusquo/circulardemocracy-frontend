@@ -2,6 +2,7 @@ import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabase';
 import { formatDate } from '@/lib/utils'; // Import the new utility
 import { PageLayout } from '@/components/PageLayout'; // Import PageLayout
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'; // Import Card components
 
 interface PoliticianStaff {
   id: string;
@@ -45,20 +46,21 @@ export function UsersPage() {
 
   return (
     <PageLayout>
-      <div className="p-4"> {/* Adjusted padding */}
-        <h1 className="text-2xl font-bold mb-4">Users (Politician Staff)</h1>
+      <CardHeader>
+        <CardTitle>Team</CardTitle>
+      </CardHeader>
+      <CardContent>
         {staff && staff.length > 0 ? (
           <div className="overflow-x-auto">
             <table className="min-w-full bg-white border border-gray-200">
               <thead>
                 <tr>
-                  <th className="py-2 px-4 border-b">ID</th>
-                  <th className="py-2 px-4 border-b">First Name</th>
-                  <th className="py-2 px-4 border-b">Last Name</th>
-                  <th className="py-2 px-4 border-b">Role</th>
-                  <th className="py-2 px-4 border-b">Created At</th> {/* New header */}
-                  <th className="py-2 px-4 border-b">Updated At</th> {/* New header */}
-                  {/* Add other table headers as needed */}
+                  <th className="py-2 px-4 border-b text-left">ID</th>
+                  <th className="py-2 px-4 border-b text-left">First Name</th>
+                  <th className="py-2 px-4 border-b text-left">Last Name</th>
+                  <th className="py-2 px-4 border-b text-left">Role</th>
+                  <th className="py-2 px-4 border-b text-left">Created At</th>
+                  <th className="py-2 px-4 border-b text-left">Updated At</th>
                 </tr>
               </thead>
               <tbody>
@@ -68,9 +70,8 @@ export function UsersPage() {
                     <td className="py-2 px-4 border-b">{member.first_name}</td>
                     <td className="py-2 px-4 border-b">{member.last_name}</td>
                     <td className="py-2 px-4 border-b">{member.role}</td>
-                    <td className="py-2 px-4 border-b">{formatDate(member.created_at)}</td> {/* Display formatted date */}
-                    <td className="py-2 px-4 border-b">{formatDate(member.updated_at)}</td> {/* Display formatted date */}
-                    {/* Add other table cells as needed */}
+                    <td className="py-2 px-4 border-b">{formatDate(member.created_at)}</td>
+                    <td className="py-2 px-4 border-b">{formatDate(member.updated_at)}</td>
                   </tr>
                 ))}
               </tbody>
@@ -79,7 +80,7 @@ export function UsersPage() {
         ) : (
           <p>No politician staff found.</p>
         )}
-      </div>
+      </CardContent>
     </PageLayout>
   );
 }

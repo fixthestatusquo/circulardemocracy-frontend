@@ -41,7 +41,7 @@ export function Navbar() {
           <NavigationMenuItem>
             <NavigationMenuLink asChild>
               <Link to="/users" className="font-medium text-gray-700 hover:text-gray-900">
-                Users
+                Team
               </Link>
             </NavigationMenuLink>
           </NavigationMenuItem>
