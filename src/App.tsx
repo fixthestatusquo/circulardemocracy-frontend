@@ -6,6 +6,7 @@ import { RegisterPage } from "./pages/RegisterPage";
 import { CampaignsPage } from "./pages/CampaignsPage";
 import { UsersPage } from "./pages/UsersPage";
 import { DashboardPage } from "./pages/DashboardPage"; // Import DashboardPage
+import { ProfilePage } from "./pages/ProfilePage";
 import { PageLayout } from "@/components/PageLayout"; // Import PageLayout // Import UsersPage
 import { Suspense } from "react"; // Import Suspense
 
@@ -62,6 +63,10 @@ export function App() {
           <Route 
             path="/" 
             element={<DashboardPage />} 
+          />
+          <Route 
+            path="/profile" 
+            element={<ProfilePage />} 
           />
           <Route 
             path="/campaigns" 
