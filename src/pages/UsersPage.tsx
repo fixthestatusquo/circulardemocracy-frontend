@@ -1,10 +1,20 @@
-import { useQuery } from "@tanstack/react-query";
+import { useSuspenseQuery } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
 import { PageLayout } from "@/components/PageLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { formatDate } from "@/lib/utils";
 
 interface ProfileInfo {
+  firstname: string | null;
+  lastname: string | null;
+  job_title: string | null;
+}
+
+interface PoliticianStaffRowFromView {
+  user_id: string;
+  role: string;
+  created_at: string;
+  updated_at: string;
   firstname: string | null;
   lastname: string | null;
   job_title: string | null;
@@ -19,56 +29,43 @@ interface PoliticianStaffWithProfile {
 }
 
 async function fetchPoliticianStaff(): Promise<PoliticianStaffWithProfile[]> {
-  const { data: staff, error: staffError } = await supabase!
-    .from("politician_staff")
-    .select("user_id, role, created_at, updated_at");
+  const { data, error } = await supabase!
+    .from("politician_staff_with_profile")
+    .select(
+      "user_id, role, created_at, updated_at, firstname, lastname, job_title",
+    );
 
-  if (staffError) {
-    throw staffError;
+  if (error) {
+    throw error;
   }
 
-  if (!staff || staff.length === 0) {
+  if (!data) {
     return [];
   }
 
-  const userIds = staff.map((member) => member.user_id);
-
-  const { data: profiles, error: profilesError } = await supabase!
-    .from("profiles")
-    .select("id, firstname, lastname, job_title")
-    .in("id", userIds);
-
-  if (profilesError) {
-    throw profilesError;
-  }
-
-  const profileMap = new Map<string, ProfileInfo>();
-  (profiles ?? []).forEach((p) => {
-    profileMap.set(p.id as string, {
-      firstname: p.firstname ?? null,
-      lastname: p.lastname ?? null,
-      job_title: p.job_title ?? null,
-    });
-  });
-
-  return staff.map((member) => ({
-    user_id: member.user_id,
-    role: member.role,
-    created_at: member.created_at,
-    updated_at: member.updated_at,
-    profile: profileMap.get(member.user_id) ?? null,
+  return (data as PoliticianStaffRowFromView[]).map((row) => ({
+    user_id: row.user_id,
+    role: row.role,
+    created_at: row.created_at,
+    updated_at: row.updated_at,
+    profile:
+      row.firstname || row.lastname || row.job_title
+        ? {
+            firstname: row.firstname,
+            lastname: row.lastname,
+            job_title: row.job_title,
+          }
+        : null,
   }));
 }
 
 export function UsersPage() {
-  const {
-    data: staff,
-    isLoading,
-    error,
-  } = useQuery<PoliticianStaffWithProfile[], Error>({
-    queryKey: ["politician_staff_with_profiles"],
-    queryFn: fetchPoliticianStaff,
-  });
+  const { data: staff } = useSuspenseQuery<PoliticianStaffWithProfile[], Error>(
+    {
+      queryKey: ["politician_staff_with_profiles"],
+      queryFn: fetchPoliticianStaff,
+    },
+  );
 
   return (
     <PageLayout>
@@ -77,11 +74,7 @@ export function UsersPage() {
           <CardTitle className="text-primary">Team</CardTitle>
         </CardHeader>
         <CardContent>
-          {isLoading && <p>Loading team...</p>}
-          {error && (
-            <p className="text-red-500">Failed to load team: {error.message}</p>
-          )}
-          {!isLoading && !error && staff && staff.length > 0 && (
+          {staff && staff.length > 0 ? (
             <div className="overflow-x-auto">
               <table className="min-w-full bg-white border border-gray-200">
                 <thead>
@@ -99,30 +92,9 @@ export function UsersPage() {
                   {staff.map((member) => {
                     const profile = member.profile;
 
-                    let firstName = "Profile not completed";
-                    let lastName = "Profile not completed";
-                    let jobTitle = "Profile not completed";
-
-                    if (profile) {
-                      if (
-                        profile.firstname &&
-                        profile.firstname.trim().length > 0
-                      ) {
-                        firstName = profile.firstname;
-                      }
-                      if (
-                        profile.lastname &&
-                        profile.lastname.trim().length > 0
-                      ) {
-                        lastName = profile.lastname;
-                      }
-                      if (
-                        profile.job_title &&
-                        profile.job_title.trim().length > 0
-                      ) {
-                        jobTitle = profile.job_title;
-                      }
-                    }
+                    const firstName = profile?.firstname || "";
+                    const lastName = profile?.lastname || "";
+                    const jobTitle = profile?.job_title || "";
 
                     return (
                       <tr key={member.user_id}>
@@ -143,8 +115,7 @@ export function UsersPage() {
                 </tbody>
               </table>
             </div>
-          )}
-          {!isLoading && !error && (!staff || staff.length === 0) && (
+          ) : (
             <p>No team members found.</p>
           )}
         </CardContent>

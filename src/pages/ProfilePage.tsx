@@ -9,6 +9,7 @@ import { PageLayout } from "@/components/PageLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { toast } from "sonner";
 
 const profileSchema = z.object({
   firstname: z.string().min(1, "First name is required"),
@@ -16,14 +17,12 @@ const profileSchema = z.object({
   job_title: z.string().min(1, "Job title is required"),
 });
 
-type ProfileFormValues = z.infer<typeof profileSchema>;
+const profileSelectSchema = profileSchema.extend({
+  id: z.string(),
+});
 
-interface ProfileRow {
-  id: string;
-  firstname: string | null;
-  lastname: string | null;
-  job_title: string | null;
-}
+type ProfileFormValues = z.infer<typeof profileSchema>;
+type ProfileRow = z.infer<typeof profileSelectSchema>;
 
 async function fetchProfile(userId: string): Promise<ProfileRow | null> {
   const { data, error } = await supabase!
@@ -36,13 +35,21 @@ async function fetchProfile(userId: string): Promise<ProfileRow | null> {
     throw error;
   }
 
-  return data;
+  if (!data) {
+    return null;
+  }
+
+  const parsed = profileSelectSchema.safeParse(data);
+  if (!parsed.success) {
+    throw new Error("Invalid profile data");
+  }
+
+  return parsed.data;
 }
 
 export function ProfilePage() {
   const { data: currentUser } = useUser();
   const [saveError, setSaveError] = useState<string | null>(null);
-  const [showSuccess, setShowSuccess] = useState(false);
 
   const { data: profile, isLoading } = useQuery<ProfileRow | null, Error>({
     queryKey: ["profile", currentUser?.id],
@@ -74,18 +81,9 @@ export function ProfilePage() {
     }
   }, [profile, reset]);
 
-  useEffect(() => {
-    if (!showSuccess) return;
-    const timeoutId = window.setTimeout(() => {
-      setShowSuccess(false);
-    }, 3000);
-    return () => window.clearTimeout(timeoutId);
-  }, [showSuccess]);
-
   const onSubmit = async (values: ProfileFormValues) => {
     if (!currentUser) return;
     setSaveError(null);
-    setShowSuccess(false);
 
     const { error } = await supabase!.from("profiles").upsert(
       {
@@ -102,7 +100,9 @@ export function ProfilePage() {
       return;
     }
 
-    setShowSuccess(true);
+    toast("Profile saved", {
+      description: "Your profile was saved successfully.",
+    });
   };
 
   if (!currentUser) {
@@ -112,11 +112,6 @@ export function ProfilePage() {
   return (
     <PageLayout>
       <div className="relative">
-        {showSuccess && (
-          <div className="fixed right-4 top-20 z-50 rounded-md bg-green-600 px-4 py-2 text-sm font-medium text-white shadow-lg">
-            Profile saved successfully.
-          </div>
-        )}
         <Card className="mx-auto max-w-xl">
           <CardHeader>
             <CardTitle className="text-primary">Your Profile</CardTitle>
