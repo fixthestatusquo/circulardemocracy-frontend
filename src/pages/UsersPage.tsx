@@ -1,7 +1,8 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
-import { PageLayout } from "@/components/PageLayout"; // Import PageLayout
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"; // Import Card components
+import { PageLayout } from "@/components/PageLayout";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { formatDate } from "@/lib/utils";
 
 interface ProfileInfo {
   firstname: string | null;
@@ -12,13 +13,15 @@ interface ProfileInfo {
 interface PoliticianStaffWithProfile {
   user_id: string;
   role: string;
+  created_at: string;
+  updated_at: string;
   profile: ProfileInfo | null;
 }
 
 async function fetchPoliticianStaff(): Promise<PoliticianStaffWithProfile[]> {
   const { data: staff, error: staffError } = await supabase!
     .from("politician_staff")
-    .select("user_id, role");
+    .select("user_id, role, created_at, updated_at");
 
   if (staffError) {
     throw staffError;
@@ -51,6 +54,8 @@ async function fetchPoliticianStaff(): Promise<PoliticianStaffWithProfile[]> {
   return staff.map((member) => ({
     user_id: member.user_id,
     role: member.role,
+    created_at: member.created_at,
+    updated_at: member.updated_at,
     profile: profileMap.get(member.user_id) ?? null,
   }));
 }
@@ -81,24 +86,36 @@ export function UsersPage() {
               <table className="min-w-full bg-white border border-gray-200">
                 <thead>
                   <tr>
-                    <th className="py-2 px-4 border-b text-left">Full Name</th>
+                    <th className="py-2 px-4 border-b text-left">ID</th>
+                    <th className="py-2 px-4 border-b text-left">First Name</th>
+                    <th className="py-2 px-4 border-b text-left">Last Name</th>
                     <th className="py-2 px-4 border-b text-left">Job Title</th>
                     <th className="py-2 px-4 border-b text-left">Role</th>
+                    <th className="py-2 px-4 border-b text-left">Created At</th>
+                    <th className="py-2 px-4 border-b text-left">Updated At</th>
                   </tr>
                 </thead>
                 <tbody>
                   {staff.map((member) => {
                     const profile = member.profile;
 
-                    let fullName = "Profile not completed";
+                    let firstName = "Profile not completed";
+                    let lastName = "Profile not completed";
                     let jobTitle = "Profile not completed";
 
                     if (profile) {
-                      fullName =
-                        [profile.firstname, profile.lastname]
-                          .filter(Boolean)
-                          .join(" ") || "Profile not completed";
-
+                      if (
+                        profile.firstname &&
+                        profile.firstname.trim().length > 0
+                      ) {
+                        firstName = profile.firstname;
+                      }
+                      if (
+                        profile.lastname &&
+                        profile.lastname.trim().length > 0
+                      ) {
+                        lastName = profile.lastname;
+                      }
                       if (
                         profile.job_title &&
                         profile.job_title.trim().length > 0
@@ -109,9 +126,17 @@ export function UsersPage() {
 
                     return (
                       <tr key={member.user_id}>
-                        <td className="py-2 px-4 border-b">{fullName}</td>
+                        <td className="py-2 px-4 border-b">{member.user_id}</td>
+                        <td className="py-2 px-4 border-b">{firstName}</td>
+                        <td className="py-2 px-4 border-b">{lastName}</td>
                         <td className="py-2 px-4 border-b">{jobTitle}</td>
                         <td className="py-2 px-4 border-b">{member.role}</td>
+                        <td className="py-2 px-4 border-b">
+                          {formatDate(member.created_at)}
+                        </td>
+                        <td className="py-2 px-4 border-b">
+                          {formatDate(member.updated_at)}
+                        </td>
                       </tr>
                     );
                   })}
