@@ -5,9 +5,10 @@ import { LoginPage } from "./pages/LoginPage";
 import { RegisterPage } from "./pages/RegisterPage";
 import { CampaignsPage } from "./pages/CampaignsPage";
 import { UsersPage } from "./pages/UsersPage";
-import { DashboardPage } from "./pages/DashboardPage"; // Import DashboardPage
-import { PageLayout } from "@/components/PageLayout"; // Import PageLayout // Import UsersPage
-import { Suspense } from "react"; // Import Suspense
+import { DashboardPage } from "./pages/DashboardPage";
+import { ProfilePage } from "./pages/ProfilePage";
+import { PageLayout } from "@/components/PageLayout";
+import { Suspense } from "react";
 
 // A simple spinner component for fallback
 const LoadingSpinner = () => (
@@ -21,7 +22,11 @@ const ProtectedRoute = () => {
   const { user, loading } = useAuth();
 
   if (loading) {
-    return <PageLayout centerContent={true}><LoadingSpinner /></PageLayout>; // Or a loading spinner
+    return (
+      <PageLayout centerContent={true}>
+        <LoadingSpinner />
+      </PageLayout>
+    ); // Or a loading spinner
   }
 
   if (!user) {
@@ -36,7 +41,11 @@ const PublicRoute = () => {
   const { user, loading } = useAuth();
 
   if (loading) {
-    return <PageLayout centerContent={true}><LoadingSpinner /></PageLayout>; // Or a loading spinner
+    return (
+      <PageLayout centerContent={true}>
+        <LoadingSpinner />
+      </PageLayout>
+    ); // Or a loading spinner
   }
 
   if (user) {
@@ -48,45 +57,44 @@ const PublicRoute = () => {
 
 export function App() {
   const { loading: authLoading } = useAuth();
-  
+
   if (authLoading) {
-    return <PageLayout centerContent={true}><LoadingSpinner /></PageLayout>;
+    return (
+      <PageLayout centerContent={true}>
+        <LoadingSpinner />
+      </PageLayout>
+    );
   }
 
   return (
     <>
       <Navbar />
       <Routes>
-        {/* Protected Routes */}
         <Route element={<ProtectedRoute />}>
-          <Route 
-            path="/" 
-            element={<DashboardPage />} 
-          />
-          <Route 
-            path="/campaigns" 
+          <Route path="/" element={<DashboardPage />} />
+          <Route path="/profile" element={<ProfilePage />} />
+          <Route path="/campaigns" element={<CampaignsPage />} />
+          <Route
+            path="/users"
             element={
-                <CampaignsPage />
-            } 
-          />
-          <Route 
-            path="/users" 
-            element={
-              <Suspense fallback={<PageLayout centerContent={true}><LoadingSpinner /></PageLayout>}>
+              <Suspense
+                fallback={
+                  <PageLayout centerContent={true}>
+                    <LoadingSpinner />
+                  </PageLayout>
+                }
+              >
                 <UsersPage />
               </Suspense>
-            } 
+            }
           />
-          {/* Add other protected routes here */}
         </Route>
 
-        {/* Public Routes */}
         <Route element={<PublicRoute />}>
           <Route path="/login" element={<LoginPage />} />
           <Route path="/register" element={<RegisterPage />} />
         </Route>
 
-        {/* Catch all - 404 Not Found, or redirect to home */}
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </>

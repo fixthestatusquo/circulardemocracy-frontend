@@ -1,0 +1,185 @@
+import React from "react";
+import { render, screen, fireEvent, waitFor } from "@testing-library/react";
+import { vi, describe, it, expect, beforeEach } from "vitest";
+import * as ProfilePageModule from "@/pages/ProfilePage";
+
+const mockUseUserValue = {
+  data: { id: "user-1", email: "user@example.org" },
+};
+
+const mockUseUser = vi.fn<() => { data: { id: string; email: string } | null }>(
+  () => mockUseUserValue,
+);
+
+const mockUseQuery = vi.fn();
+
+const mockUpsert = vi.fn();
+const mockFrom = vi.fn<(table: string) => { upsert: typeof mockUpsert }>(
+  () => ({
+    upsert: mockUpsert,
+  }),
+);
+
+const mockToast = vi.fn();
+
+const ProfilePageComponent =
+  (ProfilePageModule as { ProfilePage?: React.ComponentType }).ProfilePage ??
+  (ProfilePageModule as { default?: React.ComponentType }).default!;
+
+vi.mock("@/hooks/useUser", () => ({
+  useUser: () => mockUseUser(),
+}));
+
+vi.mock("@tanstack/react-query", () => ({
+  useQuery: () => mockUseQuery(),
+}));
+
+vi.mock("@/lib/supabase", () => ({
+  supabase: {
+    from: (table: string) => mockFrom(table),
+  },
+}));
+
+vi.mock("sonner", () => ({
+  toast: (...args: unknown[]) => mockToast(...args),
+}));
+
+vi.mock("@/components/PageLayout", () => ({
+  PageLayout: ({ children }: { children: React.ReactNode }) => (
+    <div>{children}</div>
+  ),
+}));
+
+vi.mock("@/components/ui/card", () => ({
+  Card: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
+  CardHeader: ({ children }: { children: React.ReactNode }) => (
+    <div>{children}</div>
+  ),
+  CardContent: ({ children }: { children: React.ReactNode }) => (
+    <div>{children}</div>
+  ),
+  CardTitle: ({ children }: { children: React.ReactNode }) => (
+    <div>{children}</div>
+  ),
+}));
+
+vi.mock("@/components/ui/input", () => ({
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  Input: ({ label, errorMessage, ...props }: any) => (
+    <div>
+      {label && <label>{label}</label>}
+      <input aria-label={label} {...props} />
+      {errorMessage && <span>{errorMessage}</span>}
+    </div>
+  ),
+}));
+
+vi.mock("@/components/ui/button", () => ({
+  Button: (props: React.ButtonHTMLAttributes<HTMLButtonElement>) => (
+    <button {...props} />
+  ),
+}));
+
+function renderProfilePage() {
+  return render(<ProfilePageComponent />);
+}
+
+describe("ProfilePage", () => {
+  beforeEach(() => {
+    mockUseUser.mockReturnValue(mockUseUserValue);
+    mockUseQuery.mockReset();
+    mockUpsert.mockReset();
+    mockFrom.mockClear();
+    mockToast.mockClear();
+  });
+
+  it("does not render when there is no current user (permissions)", () => {
+    mockUseUser.mockReturnValue({ data: null });
+    mockUseQuery.mockReturnValue({ data: null, isLoading: false });
+
+    const { container } = renderProfilePage();
+
+    expect(container.firstChild).toBeNull();
+  });
+
+  it("shows validation errors when required fields are empty", async () => {
+    mockUseQuery.mockReturnValue({ data: null, isLoading: false });
+
+    renderProfilePage();
+
+    const submitButton = screen.getByRole("button", { name: /save profile/i });
+    fireEvent.click(submitButton);
+
+    await screen.findByText("First name is required");
+    await screen.findByText("Last name is required");
+    await screen.findByText("Job title is required");
+
+    expect(mockUpsert).not.toHaveBeenCalled();
+  });
+
+  it("submits profile data and shows success toast on success", async () => {
+    mockUseQuery.mockReturnValue({
+      data: {
+        id: "user-1",
+        firstname: "Existing",
+        lastname: "User",
+        job_title: "Member",
+      },
+      isLoading: false,
+    });
+
+    mockUpsert.mockResolvedValue({ error: null });
+
+    renderProfilePage();
+
+    const firstNameInput = screen.getByLabelText(/first name/i);
+    const lastNameInput = screen.getByLabelText(/last name/i);
+    const jobTitleInput = screen.getByLabelText(/job title/i);
+
+    fireEvent.change(firstNameInput, { target: { value: "Ada" } });
+    fireEvent.change(lastNameInput, { target: { value: "Lovelace" } });
+    fireEvent.change(jobTitleInput, { target: { value: "Engineer" } });
+
+    const submitButton = screen.getByRole("button", { name: /save profile/i });
+    fireEvent.click(submitButton);
+
+    await waitFor(() => {
+      expect(mockFrom).toHaveBeenCalledWith("profiles");
+      expect(mockUpsert).toHaveBeenCalledWith(
+        {
+          id: "user-1",
+          firstname: "Ada",
+          lastname: "Lovelace",
+          job_title: "Engineer",
+        },
+        { onConflict: "id" },
+      );
+      expect(mockToast).toHaveBeenCalled();
+    });
+  });
+
+  it("shows an inline error when the save fails", async () => {
+    mockUseQuery.mockReturnValue({
+      data: {
+        id: "user-1",
+        firstname: "Existing",
+        lastname: "User",
+        job_title: "Member",
+      },
+      isLoading: false,
+    });
+
+    mockUpsert.mockResolvedValue({
+      error: { message: "Failed to save profile" },
+    });
+
+    renderProfilePage();
+
+    const submitButton = screen.getByRole("button", { name: /save profile/i });
+    fireEvent.click(submitButton);
+
+    await screen.findByText("Failed to save profile");
+
+    expect(mockToast).not.toHaveBeenCalled();
+  });
+});
