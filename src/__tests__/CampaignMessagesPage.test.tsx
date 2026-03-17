@@ -266,8 +266,6 @@ describe("CampaignMessagesPage", () => {
           data: [
             {
               id: 1,
-              sender_hash:
-                "a1b2c3d4e5f6g7h8i9j0k1l2m3n4o5p6q7r8s9t0u1v2w3x4y5z6",
               sender_country: "US",
               duplicate_rank: 0,
               classification_confidence: 0.85,
@@ -282,7 +280,6 @@ describe("CampaignMessagesPage", () => {
 
       renderCampaignMessagesPage("1");
 
-      expect(screen.getByText("Sender ID")).toBeInTheDocument();
       expect(screen.getByText("Country")).toBeInTheDocument();
       expect(screen.getByText("Received")).toBeInTheDocument();
       expect(screen.getByText("Confidence")).toBeInTheDocument();
@@ -290,6 +287,7 @@ describe("CampaignMessagesPage", () => {
       expect(screen.getByText("Language")).toBeInTheDocument();
       expect(screen.getByText("Status")).toBeInTheDocument();
       expect(screen.getByText("Reply Sent")).toBeInTheDocument();
+      expect(screen.getByText("Actions")).toBeInTheDocument();
     });
 
     it("renders message data correctly", () => {
@@ -307,8 +305,6 @@ describe("CampaignMessagesPage", () => {
           data: [
             {
               id: 1,
-              sender_hash:
-                "a1b2c3d4e5f6g7h8i9j0k1l2m3n4o5p6q7r8s9t0u1v2w3x4y5z6",
               sender_country: "US",
               duplicate_rank: 0,
               classification_confidence: 0.85,
@@ -322,9 +318,6 @@ describe("CampaignMessagesPage", () => {
         });
 
       renderCampaignMessagesPage("1");
-
-      // Sender hash (first 8 chars)
-      expect(screen.getByText(/a1b2c3d4\.\.\./)).toBeInTheDocument();
 
       // Country
       expect(screen.getByText("US")).toBeInTheDocument();
@@ -358,8 +351,6 @@ describe("CampaignMessagesPage", () => {
           data: [
             {
               id: 1,
-              sender_hash:
-                "a1b2c3d4e5f6g7h8i9j0k1l2m3n4o5p6q7r8s9t0u1v2w3x4y5z6",
               sender_country: "US",
               duplicate_rank: 0,
               classification_confidence: 0.85,
@@ -371,8 +362,6 @@ describe("CampaignMessagesPage", () => {
             },
             {
               id: 2,
-              sender_hash:
-                "b2c3d4e5f6g7h8i9j0k1l2m3n4o5p6q7r8s9t0u1v2w3x4y5z6a1",
               sender_country: "GB",
               duplicate_rank: 1,
               classification_confidence: 0.92,
@@ -387,8 +376,6 @@ describe("CampaignMessagesPage", () => {
 
       renderCampaignMessagesPage("1");
 
-      expect(screen.getByText(/a1b2c3d4\.\.\./)).toBeInTheDocument();
-      expect(screen.getByText(/b2c3d4e5\.\.\./)).toBeInTheDocument();
       expect(screen.getByText("US")).toBeInTheDocument();
       expect(screen.getByText("GB")).toBeInTheDocument();
       // Check that Total Messages header exists and value is 2
@@ -412,8 +399,6 @@ describe("CampaignMessagesPage", () => {
           data: [
             {
               id: 2,
-              sender_hash:
-                "a1b2c3d4e5f6g7h8i9j0k1l2m3n4o5p6q7r8s9t0u1v2w3x4y5z6",
               sender_country: "US",
               duplicate_rank: 2,
               classification_confidence: 0.85,
@@ -446,8 +431,6 @@ describe("CampaignMessagesPage", () => {
           data: [
             {
               id: 1,
-              sender_hash:
-                "a1b2c3d4e5f6g7h8i9j0k1l2m3n4o5p6q7r8s9t0u1v2w3x4y5z6",
               sender_country: null,
               duplicate_rank: 0,
               classification_confidence: 0.85,
@@ -481,8 +464,6 @@ describe("CampaignMessagesPage", () => {
           data: [
             {
               id: 1,
-              sender_hash:
-                "a1b2c3d4e5f6g7h8i9j0k1l2m3n4o5p6q7r8s9t0u1v2w3x4y5z6",
               sender_country: "US",
               duplicate_rank: 0,
               classification_confidence: 0.85,
@@ -494,8 +475,6 @@ describe("CampaignMessagesPage", () => {
             },
             {
               id: 2,
-              sender_hash:
-                "b2c3d4e5f6g7h8i9j0k1l2m3n4o5p6q7r8s9t0u1v2w3x4y5z6a1",
               sender_country: "GB",
               duplicate_rank: 0,
               classification_confidence: 0.55,
@@ -507,8 +486,6 @@ describe("CampaignMessagesPage", () => {
             },
             {
               id: 3,
-              sender_hash:
-                "c3d4e5f6g7h8i9j0k1l2m3n4o5p6q7r8s9t0u1v2w3x4y5z6a1b2",
               sender_country: "FR",
               duplicate_rank: 0,
               classification_confidence: 0.25,
@@ -531,6 +508,79 @@ describe("CampaignMessagesPage", () => {
 
       const lowConfidence = screen.getByText("25%");
       expect(lowConfidence).toHaveClass("bg-red-100");
+    });
+
+    it("renders View button for each message", () => {
+      mockUseSuspenseQuery
+        .mockReturnValueOnce({
+          data: {
+            id: 1,
+            name: "Climate Action",
+            slug: "climate-action",
+            description: null,
+            status: "active",
+          },
+        })
+        .mockReturnValueOnce({
+          data: [
+            {
+              id: 1,
+              sender_country: "US",
+              duplicate_rank: 0,
+              classification_confidence: 0.85,
+              language: "en",
+              received_at: "2024-01-15T10:30:00Z",
+              processed_at: "2024-01-15T10:31:00Z",
+              reply_sent_at: null,
+              processing_status: "processed",
+            },
+          ],
+        });
+
+      renderCampaignMessagesPage("1");
+
+      const viewButtons = screen.getAllByText("View");
+      expect(viewButtons).toHaveLength(1);
+    });
+
+    it("shows placeholder alert when View button is clicked", () => {
+      mockUseSuspenseQuery
+        .mockReturnValueOnce({
+          data: {
+            id: 1,
+            name: "Climate Action",
+            slug: "climate-action",
+            description: null,
+            status: "active",
+          },
+        })
+        .mockReturnValueOnce({
+          data: [
+            {
+              id: 1,
+              sender_country: "US",
+              duplicate_rank: 0,
+              classification_confidence: 0.85,
+              language: "en",
+              received_at: "2024-01-15T10:30:00Z",
+              processed_at: "2024-01-15T10:31:00Z",
+              reply_sent_at: null,
+              processing_status: "processed",
+            },
+          ],
+        });
+
+      renderCampaignMessagesPage("1");
+
+      const viewButton = screen.getByText("View");
+      fireEvent.click(viewButton);
+
+      expect(window.alert).toHaveBeenCalledWith(
+        expect.stringContaining("Message content fetching not yet implemented"),
+      );
+      expect(window.alert).toHaveBeenCalledWith(
+        expect.stringContaining("Message ID: 1"),
+      );
     });
   });
 
