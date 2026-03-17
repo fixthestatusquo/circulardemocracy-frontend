@@ -1,32 +1,12 @@
 import { useSuspenseQuery } from '@tanstack/react-query';
 import { useParams, useNavigate } from 'react-router-dom';
+import { useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import { formatDate } from '@/lib/utils';
 import { PageLayout } from '@/components/PageLayout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft } from 'lucide-react';
-
-// TODO: Product Decision Required - Sender Identity Display
-// Current implementation shows sender_hash (first 8 chars) for privacy.
-// Unanswered questions:
-// - Should we display partial email instead?
-// - Should we show full hash or anonymized label like "Sender #123"?
-// - What level of sender information is acceptable for politicians to see?
-
-// TODO: Product Decision Required - Message Content Display
-// Current implementation does NOT display message content (subject/body).
-// Unanswered questions:
-// - Should we display full message content or just summaries?
-// - Should content be retrieved on-demand via JMAP?
-// - What privacy considerations apply to message content display?
-
-// TODO: Product Decision Required - Filtering Criteria
-// No filtering implemented yet.
-// Unanswered questions:
-// - Which filtering criteria are most important? (date range, duplicate status, confidence level?)
-// - Should filters be client-side or require backend support?
-// - What are the primary use cases for filtering messages?
+import { ArrowLeft, ChevronLeft, ChevronRight } from 'lucide-react';
 
 interface Campaign {
   id: number;
@@ -38,7 +18,6 @@ interface Campaign {
 
 interface Message {
   id: number;
-  sender_hash: string;
   sender_country: string | null;
   duplicate_rank: number;
   classification_confidence: number;
@@ -47,6 +26,7 @@ interface Message {
   processed_at: string;
   reply_sent_at: string | null;
   processing_status: string;
+  // Note: sender_hash removed from interface as sender info is not displayed
 }
 
 async function fetchCampaign(campaignId: string): Promise<Campaign> {
@@ -62,24 +42,58 @@ async function fetchCampaign(campaignId: string): Promise<Campaign> {
   return data;
 }
 
-async function fetchCampaignMessages(campaignId: string): Promise<Message[]> {
-  // TODO: Pagination - No pagination implemented yet
-  // Current implementation fetches all messages for the campaign.
-  // Consider implementing pagination using .range() when requirements are clarified.
-  // Questions to answer:
-  // - What page size is appropriate?
-  // - Should we use offset-based or cursor-based pagination?
+async function fetchCampaignMessages(
+  campaignId: string,
+  filterLowConfidence?: boolean,
+  page: number = 1,
+  pageSize: number = 50
+): Promise<{ messages: Message[]; totalCount: number }> {
+  // Pagination implemented using .range() for efficient data retrieval
+  // Page size set to 50 as reasonable default
+  // Returns both messages and total count for pagination UI
   
-  const { data, error } = await supabase!
+  const offset = (page - 1) * pageSize;
+  
+  // Get total count first
+  let countQuery = supabase!
     .from('messages')
-    .select('id, sender_hash, sender_country, duplicate_rank, classification_confidence, language, received_at, processed_at, reply_sent_at, processing_status')
+    .select('id', { count: 'exact', head: true })
+    .eq('campaign_id', campaignId);
+    
+  if (filterLowConfidence) {
+    countQuery = countQuery.lt('classification_confidence', 0.7);
+  }
+  
+  const { count: totalCount, error: countError } = await countQuery;
+  
+  if (countError) {
+    throw countError;
+  }
+  
+  // Get paginated messages
+  let query = supabase!
+    .from('messages')
+    .select('id, sender_country, duplicate_rank, classification_confidence, language, received_at, processed_at, reply_sent_at, processing_status')
     .eq('campaign_id', campaignId)
+    .range(offset, offset + pageSize - 1)
     .order('received_at', { ascending: false });
+
+  // Backend-driven filtering: Apply confidence filter if needed
+  if (filterLowConfidence) {
+    // TODO: Define threshold for "low confidence" - using 0.7 as placeholder
+    query = query.lt('classification_confidence', 0.7);
+  }
+
+  const { data, error } = await query;
 
   if (error) {
     throw error;
   }
-  return data;
+  
+  return { 
+    messages: data || [], 
+    totalCount: totalCount || 0 
+  };
 }
 
 export function CampaignMessagesPage() {
@@ -103,19 +117,87 @@ export function CampaignMessagesPage() {
     queryFn: () => fetchCampaign(id),
   });
 
-  const { data: messages } = useSuspenseQuery<Message[], Error>({
-    queryKey: ['campaign-messages', id],
-    queryFn: () => fetchCampaignMessages(id),
-  });
+  // TODO: Determine if campaign has reply_template set
+  // This state should come from the campaign data to enable conditional filtering.
+  // If campaign.reply_template_id exists or similar field, use it here.
+  // For now, we fetch ALL messages (filterLowConfidence = false).
+  // Once reply template state is available, pass it to fetchCampaignMessages.
+  const hasReplyTemplate = false; // TODO: Replace with actual state from campaign data
+  const [currentPage, setCurrentPage] = useState(1);
+  const pageSize = 50;
 
-  // TODO: CSV Export - Placeholder action
-  // Product decision required on export requirements:
-  // - What fields should be included in the export?
-  // - Should exports include PII or remain privacy-safe?
-  // - Should export be client-side or server-side?
-  const handleExport = () => {
-    // Placeholder for CSV export functionality
-    alert('CSV export functionality not yet implemented. Product requirements needed.');
+  const { data: messagesData } = useSuspenseQuery<{ messages: Message[]; totalCount: number }, Error>({
+    queryKey: ['campaign-messages', id, hasReplyTemplate, currentPage],
+    queryFn: () => fetchCampaignMessages(id, hasReplyTemplate, currentPage, pageSize),
+  });
+  
+  const messages = messagesData?.messages || [];
+  const totalCount = messagesData?.totalCount || 0;
+  const totalPages = Math.ceil(totalCount / pageSize);
+
+  // CSV Export functionality
+  // Export includes: Country, Received date, Confidence, Duplicate status, Language, Processing status, Reply sent date
+  // Privacy-safe: No sender information included
+  const handleExport = async () => {
+    try {
+      // Fetch all messages for export (no pagination)
+      const allMessagesData = await fetchCampaignMessages(id, hasReplyTemplate, 1, 10000);
+      const allMessages = allMessagesData.messages;
+      
+      if (allMessages.length === 0) {
+        alert('No messages to export');
+        return;
+      }
+      
+      // Create CSV content
+      const headers = ['Country', 'Received', 'Confidence', 'Duplicate', 'Language', 'Status', 'Reply Sent'];
+      const csvContent = [
+        headers.join(','),
+        ...allMessages.map(message => [
+          message.sender_country || '',
+          message.received_at,
+          `${(message.classification_confidence * 100).toFixed(1)}%`,
+          message.duplicate_rank === 0 ? 'Original' : `Dup #${message.duplicate_rank}`,
+          message.language,
+          message.processing_status,
+          message.reply_sent_at || ''
+        ].map(field => `"${field}"`).join(','))
+      ].join('\n');
+      
+      // Create and download CSV file
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+      const link = document.createElement('a');
+      const url = URL.createObjectURL(blob);
+      link.setAttribute('href', url);
+      link.setAttribute('download', `${campaign.name.replace(/[^a-z0-9]/gi, '_')}_messages.csv`);
+      link.style.visibility = 'hidden';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    } catch (error) {
+      console.error('Export failed:', error);
+      alert('Export failed. Please try again.');
+    }
+  };
+
+  // JMAP Integration Point: On-demand message content fetching
+  const handleViewMessage = (messageId: number) => {
+    // TODO: Implement JMAP integration to fetch message content from Stalwart
+    // This is a placeholder integration point. Full JMAP logic is not implemented.
+    // 
+    // Expected implementation:
+    // 1. Fetch message content via JMAP API using messageId
+    // 2. Display content in a modal or side panel
+    // 3. CRITICAL: Do NOT render raw HTML directly
+    // 
+    // Security considerations:
+    // - Message content MUST be sanitized before rendering
+    // - Options: Use DOMPurify library OR render in sandboxed iframe
+    // - TODO: Decide on sanitization strategy (DOMPurify vs iframe)
+    // - TODO: Implement chosen sanitization method
+    // 
+    // For now, show placeholder alert
+    alert(`Message content fetching not yet implemented.\n\nMessage ID: ${messageId}\n\nTODO: Integrate JMAP to fetch content from Stalwart.\nTODO: Implement safe content rendering (sanitization/iframe).`);
   };
 
   return (
@@ -145,8 +227,38 @@ export function CampaignMessagesPage() {
             )}
             <div className="text-sm text-gray-500 mt-2">
               Status: <span className="font-medium">{campaign.status}</span> | 
-              Total Messages: <span className="font-medium">{messages.length}</span>
+              Total Messages: <span className="font-medium">{totalCount}</span>
             </div>
+            {totalPages > 1 && (
+              <div className="flex items-center justify-between mt-4">
+                <div className="text-sm text-gray-600">
+                  Showing {((currentPage - 1) * pageSize) + 1} to {Math.min(currentPage * pageSize, totalCount)} of {totalCount} messages
+                </div>
+                <div className="flex items-center gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
+                    disabled={currentPage === 1}
+                  >
+                    <ChevronLeft className="h-4 w-4" />
+                    Previous
+                  </Button>
+                  <span className="text-sm text-gray-600">
+                    Page {currentPage} of {totalPages}
+                  </span>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
+                    disabled={currentPage === totalPages}
+                  >
+                    Next
+                    <ChevronRight className="h-4 w-4" />
+                  </Button>
+                </div>
+              </div>
+            )}
           </CardHeader>
           <CardContent>
             {messages && messages.length > 0 ? (
@@ -154,7 +266,6 @@ export function CampaignMessagesPage() {
                 <table className="min-w-full bg-white border border-gray-200">
                   <thead>
                     <tr>
-                      <th className="py-2 px-4 border-b text-left">Sender ID</th>
                       <th className="py-2 px-4 border-b text-left">Country</th>
                       <th className="py-2 px-4 border-b text-left">Received</th>
                       <th className="py-2 px-4 border-b text-left">Confidence</th>
@@ -162,6 +273,7 @@ export function CampaignMessagesPage() {
                       <th className="py-2 px-4 border-b text-left">Language</th>
                       <th className="py-2 px-4 border-b text-left">Status</th>
                       <th className="py-2 px-4 border-b text-left">Reply Sent</th>
+                      <th className="py-2 px-4 border-b text-left">Actions</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -170,10 +282,6 @@ export function CampaignMessagesPage() {
                         key={message.id}
                         className="hover:bg-gray-50"
                       >
-                        <td className="py-2 px-4 border-b font-mono text-xs">
-                          {/* TODO: Sender display format - using first 8 chars of hash for now */}
-                          {message.sender_hash.substring(0, 8)}...
-                        </td>
                         <td className="py-2 px-4 border-b">
                           {message.sender_country || '-'}
                         </td>
@@ -219,6 +327,16 @@ export function CampaignMessagesPage() {
                             <span className="text-gray-400">-</span>
                           )}
                         </td>
+                        <td className="py-2 px-4 border-b">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleViewMessage(message.id)}
+                            className="text-xs"
+                          >
+                            View
+                          </Button>
+                        </td>
                       </tr>
                     ))}
                   </tbody>
@@ -230,12 +348,11 @@ export function CampaignMessagesPage() {
           </CardContent>
         </Card>
 
-        {/* TODO: Message Preview/Detail Panel
-            Product decision required:
-            - Should clicking a message row show a preview panel?
-            - What information should be displayed in the preview?
-            - Should full message content be fetched on-demand via JMAP?
-            - Privacy considerations for displaying message content?
+        {/* Message Content Display - Placeholder
+            RESOLVED: Message content is fetched on-demand via JMAP (not in table)
+            Implementation: handleViewMessage() provides integration point
+            TODO: Complete JMAP integration with Stalwart
+            TODO: Implement safe content rendering (sanitization required)
         */}
       </div>
     </PageLayout>
