@@ -110,8 +110,10 @@ async function fetchCampaignMessageCounts(): Promise<Record<string, number>> {
   // Count messages per campaign
   const counts: Record<string, number> = {};
   allMessages?.forEach(message => {
-    const campaignId = message.campaign_id.toString();
-    counts[campaignId] = (counts[campaignId] || 0) + 1;
+    if (message.campaign_id != null) {
+      const campaignId = message.campaign_id.toString();
+      counts[campaignId] = (counts[campaignId] || 0) + 1;
+    }
   });
   
   return counts;
