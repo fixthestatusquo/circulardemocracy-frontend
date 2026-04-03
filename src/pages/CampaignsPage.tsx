@@ -1,5 +1,6 @@
 import { useSuspenseQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabase';
+import { api } from '@/lib/api';
 import { formatDate } from '@/lib/utils'; // Import the new utility
 import { PageLayout } from '@/components/PageLayout'; // Import PageLayout
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'; // Import Card components
@@ -55,18 +56,7 @@ async function fetchCampaigns(): Promise<Campaign[]> {
 }
 
 async function fetchReplyTemplates(): Promise<ReplyTemplate[]> {
-  const { data: { session } } = await supabase!.auth.getSession();
-  
-  if (!session) {
-    throw new Error('Not authenticated');
-  }
-
-  const response = await fetch(`${import.meta.env.VITE_API_URL}/api/v1/reply-templates`, {
-    headers: {
-      'Authorization': `Bearer ${session.access_token}`,
-      'Content-Type': 'application/json',
-    },
-  });
+  const response = await api.get('/api/v1/reply-templates');
 
   if (!response.ok) {
     throw new Error('Failed to fetch reply templates');
@@ -76,18 +66,7 @@ async function fetchReplyTemplates(): Promise<ReplyTemplate[]> {
 }
 
 async function fetchTemplateById(templateId: number): Promise<any> {
-  const { data: { session } } = await supabase!.auth.getSession();
-  
-  if (!session) {
-    throw new Error('Not authenticated');
-  }
-
-  const response = await fetch(`${import.meta.env.VITE_API_URL}/api/v1/reply-templates/${String(templateId)}`, {
-    headers: {
-      'Authorization': `Bearer ${session.access_token}`,
-      'Content-Type': 'application/json',
-    },
-  });
+  const response = await api.get(`/api/v1/reply-templates/${String(templateId)}`);
 
   if (!response.ok) {
     throw new Error(`Failed to fetch template`);

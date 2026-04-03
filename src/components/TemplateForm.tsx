@@ -3,6 +3,7 @@ import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useMutation, useQueryClient, useSuspenseQuery } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabase';
+import { api } from '@/lib/api';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -67,12 +68,6 @@ async function fetchCampaigns(): Promise<Campaign[]> {
 
 async function createTemplate(templateData: Omit<TemplateFormData, 'active'>): Promise<any> {
   try {
-    const { data: { session } } = await supabase!.auth.getSession();
-    
-    if (!session) {
-      throw new Error('Not authenticated. Please log in and try again.');
-    }
-
     const payload = {
       ...templateData,
       body: templateData.body || '',
@@ -81,14 +76,7 @@ async function createTemplate(templateData: Omit<TemplateFormData, 'active'>): P
 
     console.log('Template data sent:', payload);
 
-    const response = await fetch(`${import.meta.env.VITE_API_URL}/api/v1/reply-templates`, {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${session.access_token}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(payload),
-    });
+    const response = await api.post('/api/v1/reply-templates', payload);
 
     if (!response.ok) {
       let errorMessage = 'Failed to create template';
@@ -125,12 +113,6 @@ async function createTemplate(templateData: Omit<TemplateFormData, 'active'>): P
 
 async function updateTemplate(id: number, templateData: Partial<Omit<TemplateFormData, 'active'>>): Promise<any> {
   try {
-    const { data: { session } } = await supabase!.auth.getSession();
-    
-    if (!session) {
-      throw new Error('Not authenticated. Please log in and try again.');
-    }
-
     const payload: Record<string, any> = { ...templateData };
     if (templateData.body !== undefined) {
       payload.body = templateData.body || '';
@@ -141,14 +123,7 @@ async function updateTemplate(id: number, templateData: Partial<Omit<TemplateFor
 
     console.log('Updating template:', id, payload);
 
-    const response = await fetch(`${import.meta.env.VITE_API_URL}/api/v1/reply-templates/${id}`, {
-      method: 'PATCH',
-      headers: {
-        'Authorization': `Bearer ${session.access_token}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(payload),
-    });
+    const response = await api.patch(`/api/v1/reply-templates/${id}`, payload);
 
     if (!response.ok) {
       let errorMessage = 'Failed to update template';

@@ -1,5 +1,5 @@
 import { useSuspenseQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '@/lib/supabase';
+import { api } from '@/lib/api';
 import { Button } from '@/components/ui/button';
 import { Field, FieldLabel, FieldDescription } from '@/components/ui/field';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -30,18 +30,7 @@ interface TemplateAssignmentProps {
 
 async function fetchCampaignTemplates(campaignId: number): Promise<ReplyTemplate[]> {
   try {
-    const { data: { session } } = await supabase!.auth.getSession();
-    
-    if (!session) {
-      throw new Error('Not authenticated. Please log in and try again.');
-    }
-
-    const response = await fetch(`${import.meta.env.VITE_API_URL}/api/v1/reply-templates`, {
-      headers: {
-        'Authorization': `Bearer ${session.access_token}`,
-        'Content-Type': 'application/json',
-      },
-    });
+    const response = await api.get('/api/v1/reply-templates');
 
     if (!response.ok) {
       let errorMessage = 'Failed to fetch reply templates';
