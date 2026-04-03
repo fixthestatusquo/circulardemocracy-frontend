@@ -20,15 +20,11 @@ interface AnalyticsData {
   }>;
 }
 
-interface BackendAnalyticsItem {
+interface AnalyticsItem {
   date: string;
   campaign_id: number;
   campaign_name: string;
   message_count: number;
-}
-
-interface BackendAnalyticsResponse {
-  analytics: BackendAnalyticsItem[];
 }
 
 async function fetchAnalytics(): Promise<AnalyticsData> {
@@ -39,15 +35,11 @@ async function fetchAnalytics(): Promise<AnalyticsData> {
   }
 
   try {
-    const response = await fetch(`${import.meta.env.VITE_API_URL}/api/v1/messages/analytics`, {
-      headers: {
-        'Authorization': `Bearer ${session.access_token}`,
-        'Content-Type': 'application/json',
-      },
-    });
+    const { data: analytics, error } = await supabase!
+      .rpc('get_message_analytics_daily', { days_back: 7 });
 
-    if (!response.ok) {
-      console.warn('Analytics API returned error, returning empty data');
+    if (error) {
+      console.warn('Analytics RPC returned error:', error);
       return {
         totalMessages: 0,
         repliesSent: 0,
@@ -58,10 +50,7 @@ async function fetchAnalytics(): Promise<AnalyticsData> {
       };
     }
 
-    const backendData: BackendAnalyticsResponse = await response.json();
-
-    // Handle error response from backend
-    if (!backendData.analytics || backendData.analytics.length === 0) {
+    if (!analytics || analytics.length === 0) {
       return {
         totalMessages: 0,
         repliesSent: 0,
@@ -71,16 +60,13 @@ async function fetchAnalytics(): Promise<AnalyticsData> {
         dailyCampaignData: [],
       };
     }
-
-    // Backend now returns daily aggregated data, just transform to frontend format
-    const analytics = backendData.analytics;
 
     // Group data by date and campaign
     const dailyByCampaignMap = new Map<string, Map<string, number>>();
     const campaignMap = new Map<number, { name: string; count: number }>();
     let totalMessages = 0;
 
-    analytics.forEach(item => {
+    analytics.forEach((item: AnalyticsItem) => {
       const date = item.date;
       const campaignName = item.campaign_name;
 
