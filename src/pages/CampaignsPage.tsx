@@ -21,7 +21,7 @@ const LoadingSpinner = () => (
 );
 
 interface Campaign {
-  id: string;
+  id: number;
   name: string;
   created_at: string;
   updated_at: string; // Assuming 'updated_at' for modified_at
@@ -82,12 +82,12 @@ async function fetchCampaignMessageCounts(): Promise<Record<string, number>> {
     const { data: allMessages, error: messagesError } = await supabase!
       .from('messages')
       .select('campaign_id');
-      
+
     if (messagesError) {
       console.error('Error fetching message counts:', messagesError);
       return {}; // Return empty counts instead of throwing
     }
-    
+
     // Count messages per campaign
     const counts: Record<string, number> = {};
     if (allMessages && Array.isArray(allMessages)) {
@@ -98,7 +98,7 @@ async function fetchCampaignMessageCounts(): Promise<Record<string, number>> {
         }
       });
     }
-    
+
     return counts;
   } catch (error) {
     console.error('Unexpected error fetching message counts:', error);
@@ -114,13 +114,13 @@ async function fetchCampaignsWithExtras(): Promise<CampaignWithExtras[]> {
       fetchReplyTemplates(),
       fetchCampaignMessageCounts()
     ]);
-    
+
     // Defensive check: ensure campaigns is an array
     if (!campaigns || !Array.isArray(campaigns)) {
       console.error('Invalid campaigns data received');
       return [];
     }
-    
+
     // Create a map of campaign_id to template ID
     const templateMap = new Map<number, number>();
     if (replyTemplates && Array.isArray(replyTemplates)) {
@@ -130,7 +130,7 @@ async function fetchCampaignsWithExtras(): Promise<CampaignWithExtras[]> {
         }
       });
     }
-    
+
     // Combine the data with defensive checks
     return campaigns.map(campaign => {
       const templateId = campaign?.id ? templateMap.get(parseInt(campaign.id)) : undefined;
@@ -154,7 +154,7 @@ export function CampaignsPage() {
   const [selectedCampaignId, setSelectedCampaignId] = useState<number | null>(null);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [editingTemplate, setEditingTemplate] = useState<any>(null);
-  
+
   const { data: campaigns } = useSuspenseQuery<CampaignWithExtras[], Error>({
     queryKey: ['campaigns-with-extras'],
     queryFn: fetchCampaignsWithExtras,
@@ -182,35 +182,35 @@ export function CampaignsPage() {
                   </thead>
                   <tbody>
                     {campaigns.map((campaign) => (
-                      <tr 
+                      <tr
                         key={campaign.id}
                         className="cursor-pointer hover:bg-gray-50 transition-colors"
                       >
-                        <td 
+                        <td
                           className="py-2 px-4 border-b"
                           onClick={() => navigate(`/campaigns/${campaign.id}`)}
                         >
                           {campaign.id}
                         </td>
-                        <td 
+                        <td
                           className="py-2 px-4 border-b font-medium"
                           onClick={() => navigate(`/campaigns/${campaign.id}`)}
                         >
                           {campaign.name}
                         </td>
-                        <td 
+                        <td
                           className="py-2 px-4 border-b"
                           onClick={() => navigate(`/campaigns/${campaign.id}`)}
                         >
                           {campaign.created_at ? formatDate(campaign.created_at) : 'N/A'}
                         </td>
-                        <td 
+                        <td
                           className="py-2 px-4 border-b"
                           onClick={() => navigate(`/campaigns/${campaign.id}`)}
                         >
                           {campaign.updated_at ? formatDate(campaign.updated_at) : 'N/A'}
                         </td>
-                        <td 
+                        <td
                           className="py-2 px-4 border-b"
                           onClick={() => navigate(`/campaigns/${campaign.id}`)}
                         >
@@ -220,8 +220,8 @@ export function CampaignsPage() {
                         </td>
                         <td className="py-2 px-4 border-b">
                           {campaign.hasReplyTemplate ? (
-                            <Badge 
-                              variant="default" 
+                            <Badge
+                              variant="default"
                               className="bg-green-100 text-green-800 hover:bg-green-200 cursor-pointer transition-colors"
                               onClick={async (e) => {
                                 e.stopPropagation();
@@ -242,8 +242,8 @@ export function CampaignsPage() {
                               Template Exists
                             </Badge>
                           ) : (
-                            <Badge 
-                              variant="outline" 
+                            <Badge
+                              variant="outline"
                               className="text-gray-500 cursor-pointer hover:bg-gray-100 transition-colors"
                               onClick={(e) => {
                                 e.stopPropagation();
@@ -268,8 +268,8 @@ export function CampaignsPage() {
       </Card>
 
       {/* Create Template Dialog */}
-      <AlertDialog 
-        open={isCreateDialogOpen} 
+      <AlertDialog
+        open={isCreateDialogOpen}
         onOpenChange={(open) => {
           setIsCreateDialogOpen(open);
           if (!open) setSelectedCampaignId(null);
@@ -313,8 +313,8 @@ export function CampaignsPage() {
       </AlertDialog>
 
       {/* Edit Template Dialog */}
-      <AlertDialog 
-        open={isEditDialogOpen} 
+      <AlertDialog
+        open={isEditDialogOpen}
         onOpenChange={setIsEditDialogOpen}
       >
         <AlertDialogContent className="!w-[90vw] !max-w-[1400px] max-h-[90vh] overflow-y-auto">
