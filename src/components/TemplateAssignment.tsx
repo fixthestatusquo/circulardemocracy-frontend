@@ -1,11 +1,12 @@
 import { useSuspenseQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '@/lib/supabase';
+import { api } from '@/lib/api';
 import { Button } from '@/components/ui/button';
 import { Field, FieldLabel, FieldDescription } from '@/components/ui/field';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { TemplatePreview } from '@/components/TemplatePreview';
 import { useState } from 'react';
 import { toast } from 'sonner';
+import { getApiErrorMessage } from '@/lib/utils';
 
 interface ReplyTemplate {
   id: number;
@@ -28,27 +29,28 @@ interface TemplateAssignmentProps {
 }
 
 async function fetchCampaignTemplates(campaignId: number): Promise<ReplyTemplate[]> {
-  const { data: { session } } = await supabase!.auth.getSession();
-  
-  if (!session) {
-    throw new Error('Not authenticated');
+  try {
+    const response = await api.get('/api/v1/reply-templates');
+
+    if (!response.ok) {
+      let errorMessage = 'Failed to fetch reply templates';
+      try {
+        const errorText = await response.text();
+        errorMessage = getApiErrorMessage(errorText, 'Failed to fetch reply templates');
+      } catch (parseError) {
+        console.error('Error parsing error response:', parseError);
+      }
+      throw new Error(errorMessage);
+    }
+
+    const allTemplates: ReplyTemplate[] = await response.json();
+    
+    // Filter templates for this campaign and only active ones
+    return allTemplates.filter(t => t.campaign_id === campaignId && t.active);
+  } catch (error) {
+    const message = getApiErrorMessage(error, 'Failed to fetch reply templates');
+    throw new Error(message);
   }
-
-  const response = await fetch(`${import.meta.env.VITE_API_URL}/api/v1/reply-templates`, {
-    headers: {
-      'Authorization': `Bearer ${session.access_token}`,
-      'Content-Type': 'application/json',
-    },
-  });
-
-  if (!response.ok) {
-    throw new Error('Failed to fetch reply templates');
-  }
-
-  const allTemplates: ReplyTemplate[] = await response.json();
-  
-  // Filter templates for this campaign and only active ones
-  return allTemplates.filter(t => t.campaign_id === campaignId && t.active);
 }
 
 export function TemplateAssignment({ 

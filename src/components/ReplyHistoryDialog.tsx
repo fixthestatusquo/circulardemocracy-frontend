@@ -1,5 +1,5 @@
 import { useSuspenseQuery } from '@tanstack/react-query';
-import { supabase } from '@/lib/supabase';
+import { api } from '@/lib/api';
 import { AlertDialog, AlertDialogContent, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { ReplyStatus } from '@/components/ReplyStatus';
 import { formatDate } from '@/lib/utils';
@@ -31,19 +31,8 @@ interface ReplyHistoryDialogProps {
 }
 
 async function fetchTemplateDetails(templateId: number): Promise<ReplyTemplate | null> {
-  const { data: { session } } = await supabase!.auth.getSession();
-  
-  if (!session) {
-    return null;
-  }
-
   try {
-    const response = await fetch(`${import.meta.env.VITE_API_URL}/api/v1/reply-templates/${templateId}`, {
-      headers: {
-        'Authorization': `Bearer ${session.access_token}`,
-        'Content-Type': 'application/json',
-      },
-    });
+    const response = await api.get(`/api/v1/reply-templates/${templateId}`);
 
     if (!response.ok) {
       return null;
