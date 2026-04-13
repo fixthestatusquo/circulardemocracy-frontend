@@ -19,7 +19,7 @@ export function AnalyticsContainer() {
     return (
       <Card className="p-4">
         <CardHeader>
-          <CardTitle className="text-primary">Analytics</CardTitle>
+          <CardTitle className="text-primary">What happened this week</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="flex items-center justify-center h-64">
