@@ -14,12 +14,12 @@ import { MessageLineChart, type MessageLineChartData } from "@/components/charts
 // MOCKS
 // =============================================================================
 
-const { mockGetSession, mockAnalyticsSingle, mockAnalyticsSelect, mockAnalyticsFrom } = vi.hoisted(() => {
+const { mockGetSession, mockAnalyticsSingle, mockAnalyticsFrom } = vi.hoisted(() => {
   const mockGetSession = vi.fn();
   const mockAnalyticsSingle = vi.fn();
   const mockAnalyticsSelect = vi.fn(() => ({ single: mockAnalyticsSingle }));
   const mockAnalyticsFrom = vi.fn(() => ({ select: mockAnalyticsSelect }));
-  return { mockGetSession, mockAnalyticsSingle, mockAnalyticsSelect, mockAnalyticsFrom };
+  return { mockGetSession, mockAnalyticsSingle, mockAnalyticsFrom };
 });
 
 vi.mock("@/lib/supabase", () => ({
