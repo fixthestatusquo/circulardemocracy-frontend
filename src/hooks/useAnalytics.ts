@@ -31,7 +31,9 @@ async function fetchAnalytics(): Promise<AnalyticsData> {
 
   try {
     const { data: summary, error } = await supabase!
-      .rpc("get_message_analytics_summary", { days_back: 7 });
+      .from("message_analytics_summary")
+      .select("total_messages, replies_sent, pending_replies, messages_by_day, messages_by_campaign, daily_campaign_data")
+      .single();
 
     if (error) {
       console.error("analytics summary returned error:", error);
@@ -57,12 +59,12 @@ async function fetchAnalytics(): Promise<AnalyticsData> {
     }
 
     return {
-      totalMessages: summary.totalMessages ?? 0,
-      repliesSent: summary.repliesSent ?? 0,
-      pendingReplies: summary.pendingReplies ?? 0,
-      messagesByDay: summary.messagesByDay ?? [],
-      messagesByCampaign: summary.messagesByCampaign ?? [],
-      dailyCampaignData: summary.dailyCampaignData ?? [],
+      totalMessages: summary.total_messages ?? 0,
+      repliesSent: summary.replies_sent ?? 0,
+      pendingReplies: summary.pending_replies ?? 0,
+      messagesByDay: summary.messages_by_day ?? [],
+      messagesByCampaign: summary.messages_by_campaign ?? [],
+      dailyCampaignData: summary.daily_campaign_data ?? [],
     };
   } catch (error) {
     console.warn("Failed to fetch analytics, returning empty data:", error);

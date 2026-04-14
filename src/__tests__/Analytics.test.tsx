@@ -7,7 +7,6 @@ import React from "react";
 // Import components
 import { useAnalytics } from "@/hooks/useAnalytics";
 import { AnalyticsPage } from "@/pages/AnalyticsPage";
-import { AnalyticsContainer } from "@/components/analytics/AnalyticsContainer";
 import { CampaignFilter } from "@/components/filters/CampaignFilter";
 import { MessageLineChart, type MessageLineChartData } from "@/components/charts/MessageLineChart";
 
@@ -15,18 +14,22 @@ import { MessageLineChart, type MessageLineChartData } from "@/components/charts
 // MOCKS
 // =============================================================================
 
-const mockGetSession = vi.fn();
-const mockFetch = vi.fn();
+const { mockGetSession, mockAnalyticsSingle, mockAnalyticsSelect, mockAnalyticsFrom } = vi.hoisted(() => {
+  const mockGetSession = vi.fn();
+  const mockAnalyticsSingle = vi.fn();
+  const mockAnalyticsSelect = vi.fn(() => ({ single: mockAnalyticsSingle }));
+  const mockAnalyticsFrom = vi.fn(() => ({ select: mockAnalyticsSelect }));
+  return { mockGetSession, mockAnalyticsSingle, mockAnalyticsSelect, mockAnalyticsFrom };
+});
 
 vi.mock("@/lib/supabase", () => ({
   supabase: {
     auth: {
       getSession: () => mockGetSession(),
     },
+    from: mockAnalyticsFrom,
   },
 }));
-
-global.fetch = mockFetch;
 
 vi.mock("echarts-for-react", () => ({
   default: ({ option, style, className }: any) => (
@@ -57,11 +60,20 @@ vi.mock("@/components/ui/card", () => ({
 // =============================================================================
 
 const mockBackendResponse = {
-  analytics: [
-    { date: "2026-03-31", campaign_id: 1, campaign_name: "Campaign A", message_count: 55 },
-    { date: "2026-03-31", campaign_id: 2, campaign_name: "Campaign B", message_count: 35 },
-    { date: "2026-04-01", campaign_id: 1, campaign_name: "Campaign A", message_count: 25 },
-    { date: "2026-04-01", campaign_id: 2, campaign_name: "Campaign B", message_count: 35 },
+  total_messages: 150,
+  replies_sent: 0,
+  pending_replies: 150,
+  messages_by_day: [
+    { date: "2026-03-31", count: 90 },
+    { date: "2026-04-01", count: 60 },
+  ],
+  messages_by_campaign: [
+    { campaignId: 1, campaignName: "Campaign A", count: 80 },
+    { campaignId: 2, campaignName: "Campaign B", count: 70 },
+  ],
+  daily_campaign_data: [
+    { date: "2026-03-31", campaigns: { "Campaign A": 55, "Campaign B": 35 } },
+    { date: "2026-04-01", campaigns: { "Campaign A": 25, "Campaign B": 35 } },
   ],
 };
 
@@ -124,9 +136,9 @@ describe("useAnalytics Hook", () => {
       },
     });
 
-    mockFetch.mockResolvedValue({
-      ok: true,
-      json: async () => mockBackendResponse,
+    mockAnalyticsSingle.mockResolvedValue({
+      data: mockBackendResponse,
+      error: null,
     });
   });
 
@@ -144,15 +156,7 @@ describe("useAnalytics Hook", () => {
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
 
     expect(result.current.data).toEqual(expectedAnalyticsData);
-    expect(mockFetch).toHaveBeenCalledWith(
-      `${import.meta.env.VITE_API_URL}/api/v1/messages/analytics`,
-      {
-        headers: {
-          Authorization: "Bearer test-token",
-          "Content-Type": "application/json",
-        },
-      }
-    );
+    expect(mockAnalyticsFrom).toHaveBeenCalledWith("message_analytics_summary");
   });
 
   it("handles loading state", () => {
@@ -177,9 +181,9 @@ describe("useAnalytics Hook", () => {
   });
 
   it("handles error when API request fails", async () => {
-    mockFetch.mockResolvedValue({
-      ok: false,
-      status: 500,
+    mockAnalyticsSingle.mockResolvedValue({
+      data: null,
+      error: new Error("query failed"),
     });
 
     const { result } = renderHook(() => useAnalytics(), { wrapper });
@@ -197,7 +201,7 @@ describe("useAnalytics Hook", () => {
   });
 
   it("handles network errors gracefully", async () => {
-    mockFetch.mockRejectedValueOnce(new Error("Network error"));
+    mockAnalyticsSingle.mockRejectedValueOnce(new Error("Network error"));
 
     const { result } = renderHook(() => useAnalytics(), { wrapper });
 
@@ -236,9 +240,9 @@ describe("useAnalytics Hook", () => {
       },
     });
 
-    mockFetch.mockResolvedValueOnce({
-      ok: true,
-      json: async () => mockBackendResponse,
+    mockAnalyticsSingle.mockResolvedValueOnce({
+      data: mockBackendResponse,
+      error: null,
     });
 
     const { result } = renderHook(() => useAnalytics(), { wrapper });
@@ -247,14 +251,8 @@ describe("useAnalytics Hook", () => {
       expect(result.current.isSuccess).toBe(true);
     });
 
-    expect(mockFetch).toHaveBeenCalledWith(
-      expect.any(String),
-      expect.objectContaining({
-        headers: expect.objectContaining({
-          Authorization: `Bearer ${testToken}`,
-        }),
-      })
-    );
+    expect(mockGetSession).toHaveBeenCalled();
+    expect(mockAnalyticsFrom).toHaveBeenCalledWith("message_analytics_summary");
   });
 });
 
