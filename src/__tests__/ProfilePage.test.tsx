@@ -38,6 +38,9 @@ vi.mock("@/lib/supabase", () => ({
 	supabase: {
 		from: (table: string) => mockFrom(table),
 	},
+	getSupabase: () => ({
+		from: (table: string) => mockFrom(table),
+	}),
 }));
 
 vi.mock("sonner", () => ({

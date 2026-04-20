@@ -26,7 +26,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { supabase } from "@/lib/supabase";
+import { getSupabase } from "@/lib/supabase";
 import { formatDate } from "@/lib/utils";
 import { api } from "@/lib/api";
 
@@ -56,15 +56,20 @@ interface BroadcastResponse {
 	success: boolean;
 	campaign_id: number;
 	supporter_count: number;
+	recipient_count?: number;
 	messages_created: number;
 	failures: number;
+	replies_sent?: number;
+	replies_failed?: number;
+	jmap_ready?: boolean;
+	first_send_error?: string;
 	error?: string;
 }
 
 async function fetchCampaign(campaignId: string): Promise<Campaign> {
 	try {
-		const { data, error } = await supabase
-			?.from("campaigns")
+		const { data, error } = await getSupabase()
+			.from("campaigns")
 			.select("id, name, slug, description, status")
 			.eq("id", campaignId)
 			.single();
@@ -98,8 +103,8 @@ async function fetchCampaignMessages(
 		const offset = (page - 1) * pageSize;
 
 		// Single query returns both paginated rows and total count.
-		let query = supabase
-			?.from("messages")
+		let query = getSupabase()
+			.from("messages")
 			.select(
 				"id, sender_country, duplicate_rank, classification_confidence, language, received_at, processed_at, reply_sent_at, reply_template_id, processing_status",
 				{ count: "exact" },
@@ -329,9 +334,28 @@ export function CampaignMessagesPage() {
 				throw new Error(data.error || "Failed to queue broadcast replies");
 			}
 
-			toast.success(
-				`Queued ${data.messages_created} replies for ${data.supporter_count} supporters.`,
-			);
+			if (data.jmap_ready === false) {
+				toast.warning(
+					`Prepared ${data.messages_created} replies; Stalwart JMAP is not configured on the API, so nothing was sent yet. Set STALWART_JMAP_ENDPOINT, STALWART_JMAP_ACCOUNT_ID, STALWART_USERNAME, STALWART_APP_PASSWORD in the backend .env (or wait for the scheduled worker in production).`,
+				);
+			} else if (data.jmap_ready === true) {
+				if ((data.replies_failed ?? 0) > 0) {
+					const detail = data.first_send_error
+						? ` ${data.first_send_error}`
+						: "";
+					toast.warning(
+						`Sent ${data.replies_sent ?? 0} of ${data.messages_created}; ${data.replies_failed} failed.${detail}`,
+					);
+				} else {
+					toast.success(
+						`Sent ${data.replies_sent ?? data.messages_created} campaign ${data.messages_created === 1 ? "reply" : "replies"}.`,
+					);
+				}
+			} else {
+				toast.success(
+					`Queued ${data.messages_created} replies for ${data.supporter_count} supporters.`,
+				);
+			}
 			queryClient.invalidateQueries({ queryKey: ["campaign-messages", id] });
 		} catch (error) {
 			console.error("Broadcast reply error:", error);

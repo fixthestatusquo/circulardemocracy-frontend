@@ -32,14 +32,18 @@ const { mockGetSession, mockAnalyticsOrder, mockAnalyticsFrom } = vi.hoisted(
 	},
 );
 
-vi.mock("@/lib/supabase", () => ({
-	supabase: {
+vi.mock("@/lib/supabase", () => {
+	const client = {
 		auth: {
 			getSession: () => mockGetSession(),
 		},
 		from: mockAnalyticsFrom,
-	},
-}));
+	};
+	return {
+		supabase: client,
+		getSupabase: () => client,
+	};
+});
 
 vi.mock("echarts-for-react", () => ({
 	default: ({ option, style, className }: any) => (

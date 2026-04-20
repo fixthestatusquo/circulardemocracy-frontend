@@ -20,7 +20,7 @@ import {
 	CardHeader,
 	CardTitle,
 } from "@/components/ui/card";
-import { supabase } from "@/lib/supabase";
+import { getSupabase } from "@/lib/supabase";
 
 const LoadingSpinner = () => (
 	<div className="flex items-center justify-center h-48">
@@ -47,8 +47,8 @@ interface TemplateWithCampaign extends ReplyTemplate {
 
 async function fetchReplyTemplates(): Promise<TemplateWithCampaign[]> {
 	try {
-		const { data, error } = await supabase
-			?.from("reply_templates_with_campaign")
+		const { data, error } = await getSupabase()
+			.from("reply_templates_with_campaign")
 			.select(
 				"id, campaign_id, campaign_name, name, subject, body, active, send_timing, scheduled_for, created_at, updated_at",
 			)

@@ -1,4 +1,8 @@
-import { useSuspenseQuery } from "@tanstack/react-query";
+import {
+	QueryClient,
+	QueryClientProvider,
+	useSuspenseQuery,
+} from "@tanstack/react-query";
 import { fireEvent, render, screen } from "@testing-library/react";
 import { BrowserRouter, Route, Routes } from "react-router-dom";
 import { beforeEach, describe, expect, it, vi } from "vitest";
@@ -41,9 +45,14 @@ const createMockQueryResult = (data: any): any => ({
 	promise: Promise.resolve({ data, status: "success" as const }),
 });
 
-vi.mock("@tanstack/react-query", () => ({
-	useSuspenseQuery: vi.fn(),
-}));
+vi.mock("@tanstack/react-query", async (importOriginal) => {
+	const actual =
+		await importOriginal<typeof import("@tanstack/react-query")>();
+	return {
+		...actual,
+		useSuspenseQuery: vi.fn(),
+	};
+});
 
 vi.mock("react-router-dom", async () => {
 	const actual = await vi.importActual("react-router-dom");
@@ -53,19 +62,32 @@ vi.mock("react-router-dom", async () => {
 	};
 });
 
-vi.mock("@/lib/supabase", () => ({
-	supabase: {
-		from: vi.fn(),
-	},
-}));
+vi.mock("@/lib/supabase", () => {
+	const from = vi.fn();
+	return {
+		supabase: { from },
+		getSupabase: () => ({ from }),
+	};
+});
+
+function createTestQueryClient() {
+	return new QueryClient({
+		defaultOptions: {
+			queries: { retry: false },
+		},
+	});
+}
 
 function renderCampaignMessagesPage(campaignId: string) {
+	const queryClient = createTestQueryClient();
 	return render(
-		<BrowserRouter>
-			<Routes>
-				<Route path="/campaigns/:id" element={<CampaignMessagesPage />} />
-			</Routes>
-		</BrowserRouter>,
+		<QueryClientProvider client={queryClient}>
+			<BrowserRouter>
+				<Routes>
+					<Route path="/campaigns/:id" element={<CampaignMessagesPage />} />
+				</Routes>
+			</BrowserRouter>
+		</QueryClientProvider>,
 		{
 			wrapper: ({ children }) => {
 				window.history.pushState({}, "", `/campaigns/${campaignId}`);
@@ -88,9 +110,11 @@ describe("CampaignMessagesPage", () => {
 			mockUseSuspenseQuery.mockReturnValue(createMockQueryResult(null) as any);
 
 			render(
-				<BrowserRouter>
-					<CampaignMessagesPage />
-				</BrowserRouter>,
+				<QueryClientProvider client={createTestQueryClient()}>
+					<BrowserRouter>
+						<CampaignMessagesPage />
+					</BrowserRouter>
+				</QueryClientProvider>,
 			);
 
 			// The test component renders immediately, so we just verify it renders

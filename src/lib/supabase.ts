@@ -1,10 +1,10 @@
-import { createClient } from "@supabase/supabase-js";
+import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
-let supabaseInstance = null;
-let supabaseError = null;
+let supabaseInstance: SupabaseClient | null = null;
+let supabaseError: string | null = null;
 
 if (!supabaseUrl || !supabaseAnonKey) {
 	supabaseError =
@@ -13,5 +13,18 @@ if (!supabaseUrl || !supabaseAnonKey) {
 	supabaseInstance = createClient(supabaseUrl, supabaseAnonKey);
 }
 
+/** May be null when env vars are missing (see {@link getSupabaseError}). */
 export const supabase = supabaseInstance;
+
 export const getSupabaseError = () => supabaseError;
+
+/** Throws if Supabase was not configured; use for queries so `data` / `error` are typed. */
+export function getSupabase(): SupabaseClient {
+	if (!supabaseInstance) {
+		throw new Error(
+			supabaseError ??
+				"Supabase URL or Anon Key is missing. Please check your environment variables.",
+		);
+	}
+	return supabaseInstance;
+}
