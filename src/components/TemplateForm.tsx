@@ -27,7 +27,7 @@ import {
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { api } from "@/lib/api";
-import { supabase } from "@/lib/supabase";
+import { getSupabase } from "@/lib/supabase";
 import { getApiErrorMessage } from "@/lib/utils";
 
 interface Campaign {
@@ -80,8 +80,8 @@ interface TemplateFormProps {
 
 async function fetchCampaigns(): Promise<Campaign[]> {
 	try {
-		const { data, error } = await supabase
-			?.from("campaigns")
+		const { data, error } = await getSupabase()
+			.from("campaigns")
 			.select("id, name")
 			.order("name");
 		if (error) {

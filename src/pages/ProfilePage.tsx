@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { useUser } from "@/hooks/useUser";
-import { supabase } from "@/lib/supabase";
+import { getSupabase } from "@/lib/supabase";
 
 const profileSchema = z.object({
 	firstname: z.string().min(1, "First name is required"),
@@ -25,8 +25,8 @@ type ProfileFormValues = z.infer<typeof profileSchema>;
 type ProfileRow = z.infer<typeof profileSelectSchema>;
 
 async function fetchProfile(userId: string): Promise<ProfileRow | null> {
-	const { data, error } = await supabase
-		?.from("profiles")
+	const { data, error } = await getSupabase()
+		.from("profiles")
 		.select("id, firstname, lastname, job_title")
 		.eq("id", userId)
 		.maybeSingle();
@@ -53,8 +53,8 @@ export function ProfilePage() {
 
 	const { data: profile, isLoading } = useQuery<ProfileRow | null, Error>({
 		queryKey: ["profile", currentUser?.id],
-		queryFn: () => fetchProfile(currentUser?.id),
-		enabled: !!currentUser,
+		queryFn: () => fetchProfile(currentUser!.id),
+		enabled: !!currentUser?.id,
 	});
 
 	const {
@@ -85,7 +85,7 @@ export function ProfilePage() {
 		if (!currentUser) return;
 		setSaveError(null);
 
-		const { error } = await supabase?.from("profiles").upsert(
+		const { error } = await getSupabase().from("profiles").upsert(
 			{
 				id: currentUser.id,
 				firstname: values.firstname,

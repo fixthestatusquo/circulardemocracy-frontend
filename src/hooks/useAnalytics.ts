@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/lib/supabase";
+import { getSupabase } from "@/lib/supabase";
 
 interface AnalyticsData {
 	totalMessages: number;
@@ -97,7 +97,7 @@ function buildAnalytics(rows: AnalyticsDailyRow[]): AnalyticsData {
 async function fetchAnalytics(): Promise<AnalyticsData> {
 	const {
 		data: { session },
-	} = await supabase?.auth.getSession();
+	} = await getSupabase().auth.getSession();
 
 	if (!session) {
 		throw new Error("Not authenticated");
@@ -107,8 +107,8 @@ async function fetchAnalytics(): Promise<AnalyticsData> {
 		const sevenDaysAgo = new Date();
 		sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
 
-		const { data, error } = await supabase
-			?.from("message_analytics_view")
+		const { data, error } = await getSupabase()
+			.from("message_analytics_view")
 			.select("date, campaign_id, campaign_name, message_count")
 			.gte("date", sevenDaysAgo.toISOString())
 			.order("date", { ascending: true });

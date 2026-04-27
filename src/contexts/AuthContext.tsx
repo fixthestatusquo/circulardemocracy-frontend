@@ -31,16 +31,19 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 	const [loading, setLoading] = useState<boolean>(true);
 
 	useEffect(() => {
-		const { data: authListener } = supabase?.auth.onAuthStateChange(
+		if (!supabase) {
+			setLoading(false);
+			return;
+		}
+
+		const { data: authListener } = supabase.auth.onAuthStateChange(
 			async (_event, session) => {
-				// Changed event to _event
 				setUser(session?.user || null);
 				setLoading(false);
 			},
 		);
 
-		// Initial check
-		supabase?.auth.getSession().then(({ data: { session } }) => {
+		supabase.auth.getSession().then(({ data: { session } }) => {
 			setUser(session?.user || null);
 			setLoading(false);
 		});
@@ -51,21 +54,30 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 	}, []);
 
 	const signIn = async (email: string, password: string) => {
-		const { data, error } = await supabase?.auth.signInWithPassword({
+		if (!supabase) {
+			return { data: null, error: null };
+		}
+		const { data, error } = await supabase.auth.signInWithPassword({
 			email,
 			password,
 		});
-		return { data, error: error instanceof AuthApiError ? error : null }; // Ensure error is AuthApiError
+		return { data, error: error instanceof AuthApiError ? error : null };
 	};
 
 	const signUp = async (email: string, password: string) => {
-		const { data, error } = await supabase?.auth.signUp({ email, password });
-		return { data, error: error instanceof AuthApiError ? error : null }; // Ensure error is AuthApiError
+		if (!supabase) {
+			return { data: null, error: null };
+		}
+		const { data, error } = await supabase.auth.signUp({ email, password });
+		return { data, error: error instanceof AuthApiError ? error : null };
 	};
 
 	const signOut = async () => {
-		const { error } = await supabase?.auth.signOut();
-		return { error: error instanceof AuthApiError ? error : null }; // Ensure error is AuthApiError
+		if (!supabase) {
+			return { error: null };
+		}
+		const { error } = await supabase.auth.signOut();
+		return { error: error instanceof AuthApiError ? error : null };
 	};
 
 	return (

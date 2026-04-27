@@ -1,4 +1,5 @@
 import { useSuspenseQuery } from "@tanstack/react-query";
+import { X } from "lucide-react";
 import { ReplyStatus } from "@/components/ReplyStatus";
 import { getTimingDisplayLabel } from "@/components/SendTimingSelector";
 import {
@@ -8,6 +9,7 @@ import {
 	AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { supabase } from "@/lib/supabase";
 import { formatDate } from "@/lib/utils";
 
@@ -209,7 +211,17 @@ export function ReplyHistoryDialog({
 	return (
 		<AlertDialog open={open} onOpenChange={onOpenChange}>
 			<AlertDialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-				<AlertDialogHeader>
+				<Button
+					type="button"
+					variant="ghost"
+					size="icon"
+					className="absolute top-3 right-3 z-10 size-8 rounded-md text-muted-foreground hover:text-foreground"
+					onClick={() => onOpenChange(false)}
+					aria-label="Close reply history"
+				>
+					<X className="size-4" />
+				</Button>
+				<AlertDialogHeader className="pr-10 sm:text-left">
 					<AlertDialogTitle>
 						Reply History - Message #{message.id}
 					</AlertDialogTitle>
