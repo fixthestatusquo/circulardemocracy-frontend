@@ -166,17 +166,15 @@ export function MessageList({
                             }`}
                         />
                       </Button>
-                      {(message.reply_template_id || message.reply_sent_at) && (
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => onViewHistory(message)}
-                          className="text-xs"
-                          title="View reply history"
-                        >
-                          <History className="h-3 w-3" />
-                        </Button>
-                      )}
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => onViewHistory(message)}
+                        className="text-xs"
+                        title="View reply history"
+                      >
+                        <History className="h-3 w-3" />
+                      </Button>
                       {onClassify && (
                         <Button
                           variant="ghost"
@@ -188,17 +186,15 @@ export function MessageList({
                           <Tag className="h-3 w-3" />
                         </Button>
                       )}
-                      {onForward && (
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => onForward(message)}
-                          className="text-xs"
-                          title="Forward to politician"
-                        >
-                          <Forward className="h-3 w-3" />
-                        </Button>
-                      )}
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => onForward?.(message)}
+                        className="text-xs"
+                        title="Forward to politician"
+                      >
+                        <Forward className="h-3 w-3" />
+                      </Button>
                     </div>
                   </td>
                 </tr>

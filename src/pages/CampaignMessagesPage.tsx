@@ -14,6 +14,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { getSupabase } from "@/lib/supabase";
+import { useForwardMessage } from "@/hooks/useForwardMessage";
 
 interface Campaign {
   id: number;
@@ -146,6 +147,8 @@ export function CampaignMessagesPage() {
   const [viewedMessageIds, setViewedMessageIds] = useState<Set<string>>(
     new Set(),
   );
+
+  const { handleForward } = useForwardMessage();
 
   const { data: messagesData } = useSuspenseQuery<
     { messages: Message[]; totalCount: number },
@@ -346,6 +349,7 @@ export function CampaignMessagesPage() {
               onViewMessage={handleViewMessage}
               onViewHistory={setReplyHistoryMessage}
               onViewReply={handleViewReply}
+              onForward={handleForward}
               viewedMessageIds={viewedMessageIds}
               replyStatusFilter={replyStatusFilter}
               onReplyStatusFilterChange={setReplyStatusFilter}

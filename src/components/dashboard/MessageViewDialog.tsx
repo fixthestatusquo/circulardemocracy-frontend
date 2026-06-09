@@ -1,4 +1,5 @@
 import { useMutation } from "@tanstack/react-query";
+import { marked } from "marked";
 import { Loader2, Send, X } from "lucide-react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
@@ -80,6 +81,16 @@ function MessageContent({
         throw new Error("No reply template available for this message");
       }
 
+      // Replace {subject} placeholder with the original message subject
+      const originalSubject = viewedMessage.subject || "(no subject)";
+      templateSubject = templateSubject.replace(
+        /\{subject\}/g,
+        originalSubject,
+      );
+      templateBody = templateBody.replace(/\{subject\}/g, originalSubject);
+
+      // Convert markdown body to HTML
+      const html = marked.parse(templateBody) as string;
       const constituent = viewedMessage.replyTo?.[0] ?? viewedMessage.from?.[0];
       if (!constituent?.email) {
         throw new Error("No sender email found on the original message");
@@ -96,6 +107,7 @@ function MessageContent({
         to: constituent.email,
         subject: templateSubject,
         text: templateBody,
+        html,
       });
     },
     onSuccess: () => {
@@ -164,6 +176,26 @@ function MessageContent({
           </>
         )}
       </div>
+
+      {(replyTemplateId || campaignId) && (
+        <div className="flex gap-2 pt-2">
+          <Button
+            type="button"
+            variant="default"
+            size="sm"
+            className="h-7 text-xs"
+            disabled={sendAgainMutation.isPending}
+            onClick={() => sendAgainMutation.mutate()}
+          >
+            {sendAgainMutation.isPending ? (
+              <Loader2 className="h-3 w-3 mr-1 animate-spin" />
+            ) : (
+              <Send className="h-3 w-3 mr-1" />
+            )}
+            Reply
+          </Button>
+        </div>
+      )}
 
       <hr />
 

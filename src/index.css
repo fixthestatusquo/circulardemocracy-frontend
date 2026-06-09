@@ -5,6 +5,8 @@
 
 @custom-variant dark (&:is(.dark *));
 
+@source inline("md:grid-cols-3 md:grid-cols-4");
+
 :root {
   font-family: system-ui, Avenir, Helvetica, Arial, sans-serif;
   line-height: 1.5;
