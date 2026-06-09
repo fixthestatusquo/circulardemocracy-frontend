@@ -11,6 +11,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
+import { usePolitician } from "@/hooks/usePolitician";
 import { getSupabase } from "@/lib/supabase";
 import type { JmapMessage } from "jmap-cli";
 
@@ -42,6 +43,8 @@ function MessageContent({
   campaignId?: number | null;
   jmapClient: NonNullable<ReturnType<typeof useAuth>["jmapClient"]>;
 }) {
+  const { data: politician } = usePolitician();
+
   const sendAgainMutation = useMutation({
     mutationFn: async () => {
       if (!jmapClient) {
@@ -101,6 +104,9 @@ function MessageContent({
         throw new Error("No recipient email found on the original message");
       }
 
+      const replyTo = politician?.reply_to || representative.email;
+
+      console.log("html+text", html, templateBody);
       await jmapClient.sendEmail({
         from: representative.email,
         fromName: representative.name || representative.email,
@@ -108,6 +114,8 @@ function MessageContent({
         subject: templateSubject,
         text: templateBody,
         html,
+        replyTo,
+        inReplyTo: viewedMessage.messageID,
       });
     },
     onSuccess: () => {
