@@ -139,16 +139,7 @@ export function MessagePage() {
                 <hr />
 
                 <div className="text-sm whitespace-pre-wrap break-words max-h-96 overflow-y-auto">
-                  {viewedMessage.body ||
-                    (typeof viewedMessage.textBody === "string"
-                      ? viewedMessage.textBody
-                      : Array.isArray(viewedMessage.textBody)
-                        ? viewedMessage.textBody
-                            .map((p) =>
-                              typeof p === "string" ? p : p.partId,
-                            )
-                            .join("\n")
-                        : "(no text content)")}
+                  {(viewedMessage.body as string) || viewedMessage.textBody || "(no text content)"}
                 </div>
               </div>
             ) : !jmapClient ? null : (

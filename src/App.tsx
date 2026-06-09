@@ -1,20 +1,21 @@
-import { Suspense } from "react";
+import { lazy, Suspense } from "react";
 import { Navigate, Outlet, Route, Routes } from "react-router-dom";
 import { Navbar } from "@/components/navbar";
 import { PageLayout } from "@/components/PageLayout";
 import { useAuth } from "@/contexts/AuthContext";
-import { AnalyticsPage } from "./pages/AnalyticsPage";
-import { CampaignMessagesPage } from "./pages/CampaignMessagesPage";
-import { CampaignsPage } from "./pages/CampaignsPage";
-import { DashboardPage } from "./pages/DashboardPage";
-import { LoginPage } from "./pages/LoginPage";
-import { PoliticianPage } from "./pages/PoliticianPage";
-import { ProfilePage } from "./pages/ProfilePage";
-import { RegisterPage } from "./pages/RegisterPage";
-import { MessagePage } from "./pages/MessagePage";
-import { TemplatesPage } from "./pages/TemplatesPage";
-import { UnclassifiedPage } from "./pages/UnclassifiedPage";
-import { UsersPage } from "./pages/UsersPage";
+
+const AnalyticsPage = lazy(() => import("./pages/AnalyticsPage").then((m) => ({ default: m.AnalyticsPage })));
+const CampaignMessagesPage = lazy(() => import("./pages/CampaignMessagesPage").then((m) => ({ default: m.CampaignMessagesPage })));
+const CampaignsPage = lazy(() => import("./pages/CampaignsPage").then((m) => ({ default: m.CampaignsPage })));
+const DashboardPage = lazy(() => import("./pages/DashboardPage").then((m) => ({ default: m.DashboardPage })));
+const LoginPage = lazy(() => import("./pages/LoginPage").then((m) => ({ default: m.LoginPage })));
+const PoliticianPage = lazy(() => import("./pages/PoliticianPage").then((m) => ({ default: m.PoliticianPage })));
+const ProfilePage = lazy(() => import("./pages/ProfilePage").then((m) => ({ default: m.ProfilePage })));
+const RegisterPage = lazy(() => import("./pages/RegisterPage").then((m) => ({ default: m.RegisterPage })));
+const MessagePage = lazy(() => import("./pages/MessagePage").then((m) => ({ default: m.MessagePage })));
+const TemplatesPage = lazy(() => import("./pages/TemplatesPage").then((m) => ({ default: m.TemplatesPage })));
+const UnclassifiedPage = lazy(() => import("./pages/UnclassifiedPage").then((m) => ({ default: m.UnclassifiedPage })));
+const UsersPage = lazy(() => import("./pages/UsersPage").then((m) => ({ default: m.UsersPage })));
 // A simple spinner component for fallback
 const LoadingSpinner = () => (
   <div className="flex items-center justify-center min-h-screen">
@@ -78,7 +79,20 @@ export function App() {
       </Suspense>
       <Routes>
         <Route element={<ProtectedRoute />}>
-          <Route path="/" element={<DashboardPage />} />
+          <Route
+            path="/"
+            element={
+              <Suspense
+                fallback={
+                  <PageLayout centerContent={true}>
+                    <LoadingSpinner />
+                  </PageLayout>
+                }
+              >
+                <DashboardPage />
+              </Suspense>
+            }
+          />
           <Route
             path="/politician"
             element={
@@ -163,14 +177,79 @@ export function App() {
               </Suspense>
             }
           />
-          <Route path="/unclassified" element={<UnclassifiedPage />} />
-          <Route path="/analytics" element={<AnalyticsPage />} />
-          <Route path="/message/:messageId" element={<MessagePage />} />
+          <Route
+            path="/unclassified"
+            element={
+              <Suspense
+                fallback={
+                  <PageLayout centerContent={true}>
+                    <LoadingSpinner />
+                  </PageLayout>
+                }
+              >
+                <UnclassifiedPage />
+              </Suspense>
+            }
+          />
+          <Route
+            path="/analytics"
+            element={
+              <Suspense
+                fallback={
+                  <PageLayout centerContent={true}>
+                    <LoadingSpinner />
+                  </PageLayout>
+                }
+              >
+                <AnalyticsPage />
+              </Suspense>
+            }
+          />
+          <Route
+            path="/message/:messageId"
+            element={
+              <Suspense
+                fallback={
+                  <PageLayout centerContent={true}>
+                    <LoadingSpinner />
+                  </PageLayout>
+                }
+              >
+                <MessagePage />
+              </Suspense>
+            }
+          />
         </Route>
 
         <Route element={<PublicRoute />}>
-          <Route path="/login" element={<LoginPage />} />
-          <Route path="/register" element={<RegisterPage />} />
+          <Route
+            path="/login"
+            element={
+              <Suspense
+                fallback={
+                  <PageLayout centerContent={true}>
+                    <LoadingSpinner />
+                  </PageLayout>
+                }
+              >
+                <LoginPage />
+              </Suspense>
+            }
+          />
+          <Route
+            path="/register"
+            element={
+              <Suspense
+                fallback={
+                  <PageLayout centerContent={true}>
+                    <LoadingSpinner />
+                  </PageLayout>
+                }
+              >
+                <RegisterPage />
+              </Suspense>
+            }
+          />
         </Route>
 
         <Route path="*" element={<Navigate to="/" replace />} />

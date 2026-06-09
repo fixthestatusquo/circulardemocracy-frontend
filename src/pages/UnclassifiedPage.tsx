@@ -11,6 +11,7 @@ import { ReplyHistoryDialog } from "@/components/ReplyHistoryDialog";
 import { getReplyStatus, type ReplyStatusType } from "@/components/ReplyStatus";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useForwardMessage } from "@/hooks/useForwardMessage";
+import { getSupabase } from "@/lib/supabase";
 
 interface Message {
   id: number;

@@ -61,17 +61,7 @@ export function useForwardMessage() {
       }
 
       // Extract body text
-      const bodyText =
-        jmapMessage.body ||
-        (typeof jmapMessage.textBody === "string"
-          ? jmapMessage.textBody
-          : Array.isArray(jmapMessage.textBody)
-            ? jmapMessage.textBody
-                .map((p) =>
-                  typeof p === "string" ? p : (p as { partId: string }).partId,
-                )
-                .join("\n")
-            : "(no text content)");
+      const bodyText = (jmapMessage.body as string) || jmapMessage.textBody || "(no text content)";
 
       // Forward: send from the politician's mailbox with the constituent's
       // name as sender, so replies route back to the constituent via replyTo

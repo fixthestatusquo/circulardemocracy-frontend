@@ -128,10 +128,10 @@ function MessageContent({
   return (
     <div className="space-y-4">
       <div className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-1 text-sm">
-        {viewedMessage.from[0]?.name && (
+        {viewedMessage.from?.[0]?.name && (
           <>
             <span className="font-medium text-muted-foreground">From:</span>
-            <span>{viewedMessage.from[0].name.toLocaleString()}</span>
+            <span>{viewedMessage.from?.[0]?.name?.toLocaleString()}</span>
           </>
         )}
         <span className="font-medium text-muted-foreground">
@@ -208,18 +208,7 @@ function MessageContent({
       <hr />
 
       <div className="text-sm whitespace-pre-wrap break-words">
-        {viewedMessage.body ||
-          (typeof viewedMessage.textBody === "string"
-            ? viewedMessage.textBody
-            : Array.isArray(viewedMessage.textBody)
-              ? viewedMessage.textBody
-                .map((p) =>
-                  typeof p === "string"
-                    ? p
-                    : (p as { partId: string }).partId,
-                )
-                .join("\n")
-              : "(no text content)")}
+        {(viewedMessage.body as string) || viewedMessage.textBody || "(no text content)"}
       </div>
     </div>
   );
