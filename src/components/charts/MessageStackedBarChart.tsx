@@ -88,7 +88,7 @@ export function MessageStackedBarChart({
     emphasis: {
       focus: "series" as const,
     },
-    markArea: seriesIndex === 0 ? { data: markAreas, silent: true } : undefined,
+    markArea: seriesIndex === 0 ? { data: markAreas as never, silent: true } : undefined,
   }));
 
   const colors = isDarkMode
@@ -185,8 +185,6 @@ export function MessageStackedBarChart({
         axisTick: {
           show: false,
         },
-        showMaxLabel: true,
-        showMinLabel: true,
         axisLabel: {
           interval: 0,
           color: isDarkMode ? "#9ca3af" : "#6b7280",
@@ -210,7 +208,7 @@ export function MessageStackedBarChart({
               });
               buckets.push({ start: startIdx, end: dates.length - 1, label: "" });
               // Build labels from bucket dates
-              buckets.forEach((bucket, i) => {
+              buckets.forEach((bucket) => {
                 const d = new Date(`${dates[bucket.start].slice(0, 10)}T12:00:00`);
                 bucket.label = d.toLocaleDateString("en-US", { month: "short", year: "2-digit" });
                 const midIdx = Math.floor((bucket.start + bucket.end) / 2);

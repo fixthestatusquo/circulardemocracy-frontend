@@ -73,15 +73,33 @@ export function MessageLineChart({
     tooltip: {
       trigger: "axis",
       axisPointer: {
-        type: "cross",
-        label: {
-          backgroundColor: isDarkMode ? "#374151" : "#6b7280",
-        },
+        show: false,
       },
       backgroundColor: isDarkMode ? "#1f2937" : "#ffffff",
       borderColor: isDarkMode ? "#374151" : "#e5e7eb",
       textStyle: {
         color: isDarkMode ? "#f9fafb" : "#111827",
+      },
+      formatter: (params: unknown) => {
+        const items = params as Array<{
+          seriesName: string;
+          value: number;
+          marker: string;
+          axisValue: string;
+        }>;
+        if (!items || !items.length) return "";
+        const rawDate = items[0].axisValue;
+        const d = new Date(`${rawDate.slice(0, 10)}T12:00:00`);
+        const dateLabel = `${d.getDate()} ${d.toLocaleDateString("en-US", { month: "long" })}`;
+        const total = items.reduce((sum, item) => sum + item.value, 0);
+        let html = `<div class="font-medium mb-1">${dateLabel}</div>`;
+        for (const item of items) {
+          if (item.value > 0) {
+            html += `<div class="flex justify-between gap-4">${item.marker} ${item.seriesName}<span class="font-medium">${item.value}</span></div>`;
+          }
+        }
+        html += `<div class="flex justify-between gap-4 border-t pt-1 mt-1 font-bold">Total: ${total}</div>`;
+        return html;
       },
     },
     legend: {
@@ -110,7 +128,7 @@ export function MessageLineChart({
       },
       axisLabel: {
         color: isDarkMode ? "#9ca3af" : "#6b7280",
-        rotate: timeBucket === "week" ? 0 : 45,
+        rotate: 0,
         formatter: (value: string) => {
           if (timeBucket === "week") {
             const start = new Date(`${value.slice(0, 10)}T12:00:00`);
@@ -118,8 +136,8 @@ export function MessageLineChart({
             end.setDate(end.getDate() + 6);
             return `${start.getMonth() + 1}/${start.getDate()}-${end.getMonth() + 1}/${end.getDate()}`;
           }
-          const date = new Date(value);
-          return `${date.getMonth() + 1}/${date.getDate()}`;
+          const date = new Date(`${value.slice(0, 10)}T12:00:00`);
+          return date.toLocaleDateString("en-US", { weekday: "short" });
         },
       },
       splitLine: {

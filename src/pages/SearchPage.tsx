@@ -1,4 +1,4 @@
-import { useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
+import { useSuspenseQuery } from "@tanstack/react-query";
 import { Suspense, useEffect, useState } from "react";
 import { MessageViewDialog } from "@/components/dashboard/MessageViewDialog";
 import { MessageList } from "@/components/dashboard/MessageList";
@@ -70,7 +70,6 @@ interface SearchContentProps {
 }
 
 function SearchContent({ email, jmapClient }: SearchContentProps) {
-  const queryClient = useQueryClient();
   const [currentPage, setCurrentPage] = useState(1);
   const pageSize = 50;
 
