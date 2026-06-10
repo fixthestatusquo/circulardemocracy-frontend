@@ -4,6 +4,7 @@ import {
   LogIn,
   LogOut,
   Megaphone,
+  Search,
   User,
   UserPlus,
 } from "lucide-react";
@@ -56,6 +57,18 @@ function NavbarContent() {
           >
             <Inbox className="h-5 w-5" />
             <span className="hidden md:inline">Unclassified</span>
+          </Link>
+        </NavigationMenuLink>
+      </NavigationMenuItem>
+      <NavigationMenuItem>
+        <NavigationMenuLink asChild>
+          <Link
+            to="/search"
+            className="flex items-center gap-2 font-medium text-gray-700 hover:text-gray-900"
+            title="Search"
+          >
+            <Search className="h-5 w-5" />
+            <span className="hidden md:inline">Search</span>
           </Link>
         </NavigationMenuLink>
       </NavigationMenuItem>

@@ -14,6 +14,7 @@ const ProfilePage = lazy(() => import("./pages/ProfilePage").then((m) => ({ defa
 const RegisterPage = lazy(() => import("./pages/RegisterPage").then((m) => ({ default: m.RegisterPage })));
 const MessagePage = lazy(() => import("./pages/MessagePage").then((m) => ({ default: m.MessagePage })));
 const TemplatesPage = lazy(() => import("./pages/TemplatesPage").then((m) => ({ default: m.TemplatesPage })));
+const SearchPage = lazy(() => import("./pages/SearchPage").then((m) => ({ default: m.SearchPage })));
 const UnclassifiedPage = lazy(() => import("./pages/UnclassifiedPage").then((m) => ({ default: m.UnclassifiedPage })));
 const UsersPage = lazy(() => import("./pages/UsersPage").then((m) => ({ default: m.UsersPage })));
 // A simple spinner component for fallback
@@ -174,6 +175,20 @@ export function App() {
                 }
               >
                 <TemplatesPage />
+              </Suspense>
+            }
+          />
+          <Route
+            path="/search"
+            element={
+              <Suspense
+                fallback={
+                  <PageLayout centerContent={true}>
+                    <LoadingSpinner />
+                  </PageLayout>
+                }
+              >
+                <SearchPage />
               </Suspense>
             }
           />

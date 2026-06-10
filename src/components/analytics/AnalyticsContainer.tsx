@@ -3,6 +3,10 @@ import {
   MessageLineChart,
   type MessageLineChartData,
 } from "@/components/charts/MessageLineChart";
+import {
+  MessageStackedBarChart,
+  type StackedBarChartData,
+} from "@/components/charts/MessageStackedBarChart";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   type AnalyticsTimeBucket,
@@ -103,9 +107,6 @@ export function AnalyticsContainer({
   const cols = statusMetrics?.sending ? 4 : 3;
   return (
     <Card className="p-4">
-      <CardHeader>
-        <CardTitle className="text-primary">{chartTitle}</CardTitle>
-      </CardHeader>
       <CardContent className="space-y-6">
         <div className={`grid grid-cols-1 md:grid-cols-${cols} gap-4`}>
           <div className="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-lg">
@@ -141,12 +142,20 @@ export function AnalyticsContainer({
         </div>
 
         <div>
+          <h3 className="text-lg font-semibold text-primary mb-3">{chartTitle}</h3>
           {chartData.length > 0 ? (
-            <MessageLineChart
-              data={chartData}
-              height={400}
-              timeBucket={timeBucket}
-            />
+            timeBucket === "week" ? (
+              <MessageStackedBarChart
+                data={chartData as StackedBarChartData[]}
+                height={400}
+              />
+            ) : (
+              <MessageLineChart
+                data={chartData}
+                height={400}
+                timeBucket={timeBucket}
+              />
+            )
           ) : (
             <div className="flex items-center justify-center border border-gray-200 dark:border-gray-700 rounded-lg">
               <p className="text-gray-500 dark:text-gray-400">
