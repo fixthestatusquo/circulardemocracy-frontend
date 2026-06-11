@@ -1,8 +1,8 @@
-import { useMutation } from "@tanstack/react-query";
 import { marked } from "marked";
 import { Loader2, Send, X } from "lucide-react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
+import { useSendEmail } from "@/hooks/useSendEmail";
 import {
   AlertDialog,
   AlertDialogContent,
@@ -44,70 +44,63 @@ function MessageContent({
   jmapClient: NonNullable<ReturnType<typeof useAuth>["jmapClient"]>;
 }) {
   const { data: politician } = usePolitician();
+  const sendAgainMutation = useSendEmail(jmapClient);
 
-  const sendAgainMutation = useMutation({
-    mutationFn: async () => {
-      if (!jmapClient) {
-        throw new Error("JMAP client not available");
+  const handleSendAgain = async () => {
+    let templateSubject: string;
+    let templateBody: string;
+
+    if (replyTemplateId) {
+      const { data: template, error: templateError } = await getSupabase()
+        .from("reply_templates")
+        .select("subject, body")
+        .eq("id", replyTemplateId)
+        .single();
+
+      if (templateError || !template) {
+        throw new Error("Failed to fetch reply template");
       }
+      templateSubject = template.subject;
+      templateBody = template.body;
+    } else if (campaignId) {
+      const { data: template, error: templateError } = await getSupabase()
+        .from("reply_templates")
+        .select("subject, body")
+        .eq("campaign_id", campaignId)
+        .eq("active", true)
+        .limit(1)
+        .single();
 
-      let templateSubject: string;
-      let templateBody: string;
-
-      if (replyTemplateId) {
-        const { data: template, error: templateError } = await getSupabase()
-          .from("reply_templates")
-          .select("subject, body")
-          .eq("id", replyTemplateId)
-          .single();
-
-        if (templateError || !template) {
-          throw new Error("Failed to fetch reply template");
-        }
-        templateSubject = template.subject;
-        templateBody = template.body;
-      } else if (campaignId) {
-        const { data: template, error: templateError } = await getSupabase()
-          .from("reply_templates")
-          .select("subject, body")
-          .eq("campaign_id", campaignId)
-          .eq("active", true)
-          .limit(1)
-          .single();
-
-        if (templateError || !template) {
-          throw new Error("No active template found for this campaign");
-        }
-        templateSubject = template.subject;
-        templateBody = template.body;
-      } else {
-        throw new Error("No reply template available for this message");
+      if (templateError || !template) {
+        throw new Error("No active template found for this campaign");
       }
+      templateSubject = template.subject;
+      templateBody = template.body;
+    } else {
+      throw new Error("No reply template available for this message");
+    }
 
-      // Replace {subject} placeholder with the original message subject
-      const originalSubject = viewedMessage.subject || "(no subject)";
-      templateSubject = templateSubject.replace(
-        /\{subject\}/g,
-        originalSubject,
-      );
-      templateBody = templateBody.replace(/\{subject\}/g, originalSubject);
+    // Replace {subject} placeholder with the original message subject
+    const originalSubject = viewedMessage.subject || "(no subject)";
+    templateSubject = templateSubject.replace(/\{subject\}/g, originalSubject);
+    templateBody = templateBody.replace(/\{subject\}/g, originalSubject);
 
-      // Convert markdown body to HTML
-      const html = marked.parse(templateBody) as string;
-      const constituent = viewedMessage.replyTo?.[0] ?? viewedMessage.from?.[0];
-      if (!constituent?.email) {
-        throw new Error("No sender email found on the original message");
-      }
+    // Convert markdown body to HTML
+    const html = marked.parse(templateBody) as string;
+    const constituent = viewedMessage.replyTo?.[0] ?? viewedMessage.from?.[0];
+    if (!constituent?.email) {
+      throw new Error("No sender email found on the original message");
+    }
 
-      const representative = viewedMessage.to?.[0];
-      if (!representative?.email) {
-        throw new Error("No recipient email found on the original message");
-      }
+    const representative = viewedMessage.to?.[0];
+    if (!representative?.email) {
+      throw new Error("No recipient email found on the original message");
+    }
 
-      const replyTo = politician?.reply_to || representative.email;
+    const replyTo = politician?.reply_to || representative.email;
 
-      console.log("html+text", html, templateBody);
-      await jmapClient.sendEmail({
+    sendAgainMutation.mutate(
+      {
         from: representative.email,
         fromName: representative.name || representative.email,
         to: constituent.email,
@@ -116,15 +109,14 @@ function MessageContent({
         html,
         replyTo,
         inReplyTo: viewedMessage.messageID,
-      });
-    },
-    onSuccess: () => {
-      toast.success("Reply sent successfully");
-    },
-    onError: (err: Error) => {
-      toast.error(err.message || "Failed to send reply");
-    },
-  });
+      },
+      {
+        onSuccess: () => toast.success("Reply sent successfully"),
+        onError: (err: Error) =>
+          toast.error(err.message || "Failed to send reply"),
+      },
+    );
+  };
   return (
     <div className="space-y-4">
       <div className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-1 text-sm">
@@ -171,7 +163,7 @@ function MessageContent({
                 size="sm"
                 className="h-6 text-xs"
                 disabled={sendAgainMutation.isPending}
-                onClick={() => sendAgainMutation.mutate()}
+                onClick={() => handleSendAgain()}
               >
                 {sendAgainMutation.isPending ? (
                   <Loader2 className="h-3 w-3 mr-1 animate-spin" />
@@ -193,7 +185,7 @@ function MessageContent({
             size="sm"
             className="h-7 text-xs"
             disabled={sendAgainMutation.isPending}
-            onClick={() => sendAgainMutation.mutate()}
+            onClick={() => handleSendAgain()}
           >
             {sendAgainMutation.isPending ? (
               <Loader2 className="h-3 w-3 mr-1 animate-spin" />

@@ -4,12 +4,24 @@ import {
   useQueryClient,
   useSuspenseQuery,
 } from "@tanstack/react-query";
-import { useState } from "react";
+import { marked } from "marked";
+import { useEffect, useRef, useState } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { z } from "zod";
+import MDEditor, { commands, type RefMDEditor } from "@uiw/react-md-editor";
+import "@uiw/react-md-editor/markdown-editor.css";
+import "@uiw/react-markdown-preview/markdown.css";
+import TurndownService from "turndown";
+
+const turndownService = new TurndownService({ headingStyle: "atx" });
 import { SendTimingSelector } from "@/components/SendTimingSelector";
-import { TemplatePreview } from "@/components/TemplatePreview";
+import {
+  AlertDialog,
+  AlertDialogContent,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import {
   Field,
@@ -25,8 +37,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Textarea } from "@/components/ui/textarea";
+
+import { useAuth } from "@/contexts/AuthContext";
 import { usePolitician } from "@/hooks/usePolitician";
+import { useSendEmail } from "@/hooks/useSendEmail";
 import {
   insertReplyTemplate,
   type ReplyTemplateInsertPayload,
@@ -130,6 +144,66 @@ export function TemplateForm({
   const queryClient = useQueryClient();
   const { data: profile } = usePolitician();
   const isEditMode = !!initialData?.id;
+  const editorRef = useRef<RefMDEditor>(null);
+
+  // Convert rich-text paste to markdown
+  useEffect(() => {
+    const el = editorRef.current?.textarea;
+    if (!el) return;
+    const handler = (e: ClipboardEvent) => {
+      if (!e.clipboardData) return;
+      const html = e.clipboardData.getData("text/html");
+      if (!html) return;
+      e.preventDefault();
+      const markdown = turndownService.turndown(html);
+      // Insert at cursor position using the textarea API
+      const start = el.selectionStart;
+      const end = el.selectionEnd;
+      const before = el.value.slice(0, start);
+      const after = el.value.slice(end);
+      el.value = before + markdown + after;
+      el.selectionStart = el.selectionEnd = start + markdown.length;
+      el.dispatchEvent(new Event("input", { bubbles: true }));
+    };
+    el.addEventListener("paste", handler);
+    return () => el.removeEventListener("paste", handler);
+  }, []);
+
+  const { jmapClient } = useAuth();
+  const sendMutation = useSendEmail(jmapClient);
+  const [sendDialogOpen, setSendDialogOpen] = useState(false);
+  const [sendTargetEmail, setSendTargetEmail] = useState("");
+
+  const handleSendEmail = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!sendTargetEmail.trim()) return;
+    const body = watch("body");
+    const subject = watch("subject");
+    if (!body || !subject) {
+      toast.error("Both subject and body are required to send.");
+      return;
+    }
+    const html = marked.parse(body) as string;
+    sendMutation.mutate(
+      {
+        from: sendTargetEmail.trim(),
+        fromName: sendTargetEmail.trim(),
+        to: sendTargetEmail.trim(),
+        subject,
+        text: body,
+        html,
+      },
+      {
+        onSuccess: () => {
+          toast.success(`email sent to ${sendTargetEmail.trim()}`);
+          setSendTargetEmail("");
+        },
+        onError: (err: Error) => {
+          toast.error(err.message || "Failed to send email");
+        },
+      },
+    );
+  };
 
   const { data: campaigns } = useSuspenseQuery<Campaign[], Error>({
     queryKey: ["campaigns"],
@@ -139,7 +213,7 @@ export function TemplateForm({
   const [sendTiming, setSendTiming] = useState<SendTimingValue>(
     initialData?.send_timing || "immediate",
   );
-  const [showPreview, setShowPreview] = useState(false);
+
 
   const {
     register,
@@ -225,15 +299,6 @@ export function TemplateForm({
   };
 
   const activeValue = watch("active");
-  const subjectValue = watch("subject");
-  const bodyValue = watch("body");
-  const campaignIdValue = watch("campaign_id");
-
-  // Defensive campaign lookup with null check
-  const selectedCampaign =
-    campaigns && Array.isArray(campaigns)
-      ? campaigns.find((c) => c?.id === campaignIdValue)
-      : undefined;
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
@@ -288,19 +353,93 @@ export function TemplateForm({
 
       <Field>
         <FieldLabel htmlFor="body">Message Body (Markdown) *</FieldLabel>
-        <Textarea
-          id="body"
-          {...register("body")}
-          placeholder="Write your template message here. You can use Markdown formatting."
-          rows={10}
-          className="font-mono text-sm"
-        />
+        <div data-color-mode="light" className="rounded-md border border-input">
+          <MDEditor
+            ref={editorRef}
+            value={watch("body") || ""}
+            onChange={(value) => setValue("body", value || "", { shouldValidate: true })}
+            preview={initialData?.body ? "live" : "edit"}
+            height={300}
+            commands={[
+              commands.bold,
+              commands.italic,
+              commands.link,
+              commands.divider,
+              {
+                ...commands.title1,
+                name: "H1",
+                icon: <div style={{ fontSize: 18, textAlign: "left", fontWeight: 700 }}>H1</div>,
+                buttonProps: { "aria-label": "H1", title: "Heading 1" },
+              },
+              {
+                ...commands.title2,
+                name: "H2",
+                icon: <div style={{ fontSize: 16, textAlign: "left", fontWeight: 700 }}>H2</div>,
+                buttonProps: { "aria-label": "H2", title: "Heading 2" },
+              },
+              {
+                ...commands.title3,
+                name: "H3",
+                icon: <div style={{ fontSize: 15, textAlign: "left", fontWeight: 700 }}>H3</div>,
+                buttonProps: { "aria-label": "H3", title: "Heading 3" },
+              },
+              commands.divider,
+              commands.unorderedListCommand,
+              commands.orderedListCommand,
+              commands.divider,
+              {
+                name: "Send email",
+                keyCommand: "sendEmail",
+                icon: (
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M22 2 11 13" />
+                    <path d="m22 2-7 20-4-9-9-4z" />
+                  </svg>
+                ),
+                buttonProps: { "aria-label": "Send email", title: "Send email" },
+                execute: () => setSendDialogOpen(true),
+              },
+            ]}
+          />
+        </div>
         <FieldDescription>
-          Use Markdown syntax for formatting (e.g., **bold**, *italic*,
-          [links](url)). Minimum 10 characters required.
+          Use Markdown syntax for formatting. Minimum 10 characters required.
         </FieldDescription>
         {errors.body && <FieldError>{errors.body.message}</FieldError>}
       </Field>
+
+      {/* Send Email Dialog */}
+      <AlertDialog open={sendDialogOpen} onOpenChange={setSendDialogOpen}>
+        <AlertDialogContent className="max-w-md">
+          <AlertDialogHeader>
+            <AlertDialogTitle>Send Email</AlertDialogTitle>
+          </AlertDialogHeader>
+          <form onSubmit={handleSendEmail} className="space-y-4">
+            <Input
+              type="email"
+              placeholder="recipient@example.com"
+              value={sendTargetEmail}
+              onChange={(e) => setSendTargetEmail(e.target.value)}
+              required
+            />
+            <div className="flex justify-end gap-3">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setSendDialogOpen(false)}
+              >
+                Cancel
+              </Button>
+              <Button
+                type="submit"
+                disabled={sendMutation.isPending || !sendTargetEmail.trim()}
+              >
+                {sendMutation.isPending ? "Sending..." : "Send"}
+              </Button>
+            </div>
+          </form>
+        </AlertDialogContent>
+      </AlertDialog>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div>
@@ -367,32 +506,7 @@ export function TemplateForm({
         </FieldDescription>
       </Field>
 
-      {/* Preview Toggle */}
-      <div className="border-t pt-4">
-        <button
-          type="button"
-          onClick={() => setShowPreview(!showPreview)}
-          className="text-sm font-medium text-primary hover:underline"
-        >
-          {showPreview ? "Hide Preview" : "Show Preview"}
-        </button>
-      </div>
 
-      {/* Live Preview */}
-      {showPreview && subjectValue && bodyValue && (
-        <TemplatePreview
-          subject={subjectValue}
-          body={bodyValue}
-          sendTiming={sendTiming}
-          scheduledFor={watch("scheduled_for")}
-          personalizationData={{
-            name: "Jane Doe",
-            campaign: selectedCampaign?.name || "Sample Campaign",
-            subject: "Inquiry about proposal",
-            politician: `${profile.name}`,
-          }}
-        />
-      )}
 
       <div className="flex gap-3 justify-end pt-4 border-t">
         {onCancel && (

@@ -1,3 +1,4 @@
+import { useState } from "react";
 import {
   BarChart3,
   Inbox,
@@ -8,9 +9,16 @@ import {
   User,
   UserPlus,
 } from "lucide-react";
-import { Link } from "react-router-dom"; // Import Link
+import { Link, useNavigate } from "react-router-dom";
 import logo from "@/assets/logo.png";
+import {
+  AlertDialog,
+  AlertDialogContent,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import {
   NavigationMenu,
   NavigationMenuItem,
@@ -23,6 +31,19 @@ import { useProfile } from "@/hooks/useProfile"; // Import useProfile hook
 function NavbarContent() {
   const { signOut } = useAuth();
   const { data: profile } = useProfile();
+  const navigate = useNavigate();
+  const [searchOpen, setSearchOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+
+  const handleSearchSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    const q = searchQuery.trim();
+    if (q) {
+      setSearchOpen(false);
+      setSearchQuery("");
+      navigate(`/search?query=${encodeURIComponent(q)}`);
+    }
+  };
 
   const handleLogout = async () => {
     try {
@@ -62,15 +83,47 @@ function NavbarContent() {
       </NavigationMenuItem>
       <NavigationMenuItem>
         <NavigationMenuLink asChild>
-          <Link
-            to="/search"
+          <a
+            href="#"
+            onClick={(e) => { e.preventDefault(); setSearchOpen(true); }}
             className="flex items-center gap-2 font-medium text-gray-700 hover:text-gray-900"
             title="Search"
           >
             <Search className="h-5 w-5" />
             <span className="hidden md:inline">Search</span>
-          </Link>
+          </a>
         </NavigationMenuLink>
+
+        <AlertDialog open={searchOpen} onOpenChange={setSearchOpen}>
+          <AlertDialogContent className="max-w-md">
+            <AlertDialogHeader>
+              <AlertDialogTitle>Search messages</AlertDialogTitle>
+            </AlertDialogHeader>
+            <form onSubmit={handleSearchSubmit} className="space-y-4">
+              <Input
+                type="text"
+                placeholder="Email or sender name..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                required
+                autoFocus
+              />
+              <div className="flex justify-end gap-3">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setSearchOpen(false)}
+                >
+                  Cancel
+                </Button>
+                <Button type="submit" disabled={!searchQuery.trim()}>
+                  <Search className="h-4 w-4 mr-2" />
+                  Search
+                </Button>
+              </div>
+            </form>
+          </AlertDialogContent>
+        </AlertDialog>
       </NavigationMenuItem>
       {/* Team link hidden for now */}
 

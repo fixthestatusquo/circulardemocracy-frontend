@@ -178,3 +178,11 @@ h1 {
     @apply font-sans;
   }
 }
+
+/* Restore list bullets/numbers in markdown preview (overrides Tailwind preflight) */
+.wmde-markdown ul {
+  list-style-type: disc;
+}
+.wmde-markdown ol {
+  list-style-type: decimal;
+}
